@@ -1,0 +1,17 @@
+# Public Actions route next to the internal one, the way management runs it.
+actionsRoute:
+  enabled: true
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: external
+      namespace: envoy-gateway-system
+  hostnames:
+    - webhooks.example.com
+config:
+  appId: "123456"
+  org: acme
+  loginClientId: Iv23ci-login-client
+secret:
+  privateKey: ci-not-a-real-key
+  loginClientSecret: ci-login-secret

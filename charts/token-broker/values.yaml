@@ -116,6 +116,19 @@ httpRoute:
         type: PathPrefix
         value: /
 
+# Public route for GitHub-hosted runners: forwards only POST <path> to /token/actions,
+# which accepts Actions OIDC tokens and nothing else. Workflows on internal runners can
+# use the internal route's /token instead and leave this disabled.
+actionsRoute:
+  enabled: false
+  annotations: {}
+  labels: {}
+  # e.g. the external gateway; required when enabled.
+  parentRefs: []
+  hostnames: []
+  # Public path, rewritten to /token/actions.
+  path: /token-broker/token/actions
+
 resources: {}
   # requests:
   #   cpu: 10m

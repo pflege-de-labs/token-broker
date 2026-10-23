@@ -112,6 +112,7 @@ func run() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /token", b.handleToken)
+	mux.HandleFunc("POST /token/actions", b.handleActionsToken)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	mux.HandleFunc("GET /readyz", b.handleReady)
 	mux.Handle("GET /metrics", promhttp.Handler())
@@ -143,6 +144,19 @@ func newBroker(cfg config, actions *oidc.IDTokenVerifier, meter metric.Meter) (*
 		return nil, err
 	}
 	return &broker{cfg: cfg, client: &http.Client{Timeout: 10 * time.Second}, actions: actions, requests: requests, latency: latency}, nil
+}
+
+// handleActionsToken is the only path a public route should forward: it never accepts
+// login tokens, so the device flow stays reachable from the internal network only.
+func (b *broker) handleActionsToken(w http.ResponseWriter, r *http.Request) {
+	bearer, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if strings.Count(bearer, ".") != 2 {
+		attrs := metric.WithAttributes(attribute.String("outcome", "unauthenticated"), attribute.String("via", "actions"))
+		b.requests.Add(r.Context(), 1, attrs)
+		http.Error(w, "only GitHub Actions OIDC tokens are accepted here", http.StatusUnauthorized)
+		return
+	}
+	b.handleToken(w, r)
 }
 
 func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {

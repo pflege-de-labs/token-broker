@@ -147,3 +147,31 @@ func TestHandleToken(t *testing.T) {
 		})
 	}
 }
+
+func TestHandleActionsToken(t *testing.T) {
+	tests := []struct {
+		name, bearer string
+		want         int
+	}{
+		{"actions issued", actionsToken(t, "acme/app", "token-broker"), http.StatusOK},
+		{"valid login token rejected", "ghu_dev", http.StatusUnauthorized},
+		{"missing token", "", http.StatusUnauthorized},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, minted := newTestBroker(t)
+			req := httptest.NewRequest(http.MethodPost, "/token/actions", strings.NewReader(`{"repo":"acme/app"}`))
+			if tt.bearer != "" {
+				req.Header.Set("Authorization", "Bearer "+tt.bearer)
+			}
+			rec := httptest.NewRecorder()
+			b.handleActionsToken(rec, req)
+			if rec.Code != tt.want {
+				t.Fatalf("status = %d, want %d: %s", rec.Code, tt.want, rec.Body)
+			}
+			if tt.want != http.StatusOK && *minted != nil {
+				t.Errorf("agent token minted on denied request")
+			}
+		})
+	}
+}
