@@ -1,18 +1,18 @@
 # Agent tokens in GitHub Actions
 
-Workflows exchange their OIDC token for an agent token. Two setups, chosen per org or repo by
-Actions variables:
+Workflows exchange their OIDC token for an agent token. Where the broker is reachable decides
+which runners can use it:
 
-| | Runner | Broker URL | When |
-|---|---|---|---|
-| **B (default)** | GitHub-hosted | public `https://<public broker route>/token/actions` | the job needs nothing internal |
-| **A** | self-hosted `internal` | internal `https://token-broker.internal/token/actions` | the job also needs internal systems |
+| Runner | Broker endpoint | Chart |
+|---|---|---|
+| GitHub-hosted | public `POST <public URL>` → `/token/actions` | `actionsRoute` |
+| self-hosted with internal network access | internal `POST <internal URL>/token/actions` (or `/token`) | `httpRoute` or the Service |
 
-For A, set `AGENT_RUNNER=internal` and `TOKEN_BROKER_URL=<internal URL>` as repo or org variables
-(org variables live in github-ops). Internal runner capacity is limited, so B stays the default.
+`/token/actions` accepts Actions OIDC tokens and nothing else, so `actionsRoute` can be public:
+it forwards exactly one path, POST only, and developer logins, probes and metrics stay internal.
+Deployment specifics (URLs, runner labels, variables) live with the deployment, not here.
 
-The public route forwards only `POST /token-broker/token/actions`. That endpoint accepts Actions
-OIDC tokens and nothing else; developer logins, probes and metrics stay internal.
+Workflows pick runner and URL from Actions variables, so one workflow serves both setups:
 
 ```yaml
 jobs:
@@ -24,7 +24,7 @@ jobs:
     steps:
       - id: agent
         env:
-          TOKEN_BROKER_URL: ${{ vars.TOKEN_BROKER_URL || 'https://<public broker route>/token/actions' }}
+          TOKEN_BROKER_URL: ${{ vars.TOKEN_BROKER_URL }}
         run: |
           oidc=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=token-broker" | jq -r .value)
@@ -49,8 +49,8 @@ config:
   actionsOidc:
     # `ref` claim: only the default branch and release tags
     allowedRefs: [refs/heads/main, "refs/tags/v*"]
-    # `job_workflow_ref` claim: only the shared agent workflow
-    allowedWorkflows: ["pflege-de/agent-workflows/.github/workflows/agent.yml@*"]
+    # `job_workflow_ref` claim: only a shared agent workflow
+    allowedWorkflows: ["my-org/agent-workflows/.github/workflows/agent.yml@*"]
 ```
 
 A request must match one pattern of each configured list. Empty lists apply no restriction.

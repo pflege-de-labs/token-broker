@@ -1,4 +1,4 @@
-# Public Actions route next to the internal one, the way management runs it.
+# Public Actions route on a shared host, under a path prefix.
 actionsRoute:
   enabled: true
   parentRefs:
@@ -8,6 +8,7 @@ actionsRoute:
       namespace: envoy-gateway-system
   hostnames:
     - webhooks.example.com
+  path: /broker/token/actions
 config:
   appId: "123456"
   org: acme

@@ -48,7 +48,7 @@ actions=$(helm template token-broker "$chart" --values "$chart/ci/actions-route-
   --show-only templates/httproute-actions.yaml)
 [ "$(echo "$actions" | grep -c "value: ")" -eq 1 ] \
   || fail "public route matches more than one path"
-echo "$actions" | grep -q 'value: "/token-broker/token/actions"' \
+echo "$actions" | grep -q 'value: "/broker/token/actions"' \
   || fail "public route does not match the configured path"
 echo "$actions" | grep -q "method: POST" \
   || fail "public route is not restricted to POST"

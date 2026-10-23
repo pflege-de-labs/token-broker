@@ -132,8 +132,8 @@ actionsRoute:
   # e.g. the external gateway; required when enabled.
   parentRefs: []
   hostnames: []
-  # Public path, rewritten to /token/actions.
-  path: /token-broker/token/actions
+  # Public path, rewritten to /token/actions; set a prefix when the host is shared.
+  path: /token/actions
 
 resources: {}
   # requests:
