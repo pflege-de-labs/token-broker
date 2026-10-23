@@ -3,7 +3,7 @@
 The broker needs two org-owned GitHub Apps in `pflege-de`. Settings live under
 *Organization settings → Developer settings → GitHub Apps*.
 
-| | Agent app (e.g. `pflege-agent`) | Login app (e.g. `pflege-agent-login`) |
+| | Agent app (`pflege-de-agent`) | Login app (`pflege-de-agent-login`) |
 |---|---|---|
 | Purpose | Identity agents commit, push and open PRs as | Proves who a developer is (device flow) |
 | Repository permissions | Contents RW, Pull requests RW, Issues RW, Metadata R | **none** |
@@ -49,7 +49,7 @@ Prefer External Secrets; for a manual setup:
 
 ```bash
 kubectl create secret generic token-broker-credentials \
-  --from-file=private-key.pem=pflege-agent.private-key.pem \
+  --from-file=private-key.pem=pflege-de-agent.private-key.pem \
   --from-literal=login-client-secret="$LOGIN_CLIENT_SECRET"
 ```
 
@@ -68,8 +68,8 @@ config:
 The bot's commit email uses the **bot user ID**, not the App ID:
 
 ```bash
-id=$(gh api "/users/pflege-agent%5Bbot%5D" --jq .id)
-echo "pflege-agent[bot] <${id}+pflege-agent[bot]@users.noreply.github.com>"
+id=$(gh api "/users/pflege-de-agent%5Bbot%5D" --jq .id)
+echo "pflege-de-agent[bot] <${id}+pflege-de-agent[bot]@users.noreply.github.com>"
 ```
 
 Commits created through the API with an installation token are signed by GitHub and
