@@ -129,7 +129,7 @@ actionsRoute:
   enabled: false
   annotations: {}
   labels: {}
-  # e.g. the external gateway; required when enabled.
+  # An internet-facing Gateway; required when enabled.
   parentRefs: []
   hostnames: []
   # Public path, rewritten to /token/actions; set a prefix when the host is shared.

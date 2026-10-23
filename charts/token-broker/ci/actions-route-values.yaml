@@ -4,10 +4,10 @@ actionsRoute:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      name: external
-      namespace: envoy-gateway-system
+      name: public
+      namespace: gateway-system
   hostnames:
-    - webhooks.example.com
+    - public.example.com
   path: /broker/token/actions
 config:
   appId: "123456"
