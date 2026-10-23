@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Usage: agent-run [org/repo] [claude args...]
+# Runs Claude Code in a container that holds only an agent token for one repo, renewed while
+# the session runs. Defaults to the repo of the current checkout. See docs/local.md.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+: "${AGENT_APP_SLUG:?set AGENT_APP_SLUG to the agent GitHub App slug}"
+image=${AGENT_IMAGE:-localhost/agent-sandbox:latest}
+
+top=$(git rev-parse --show-toplevel)
+if [[ ${1:-} =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]]; then
+  repo=$1
+  shift
+else
+  repo=$(git -C "$top" remote get-url origin | sed -E 's#^(git@github\.com:|https://github\.com/)##; s#\.git$##')
+fi
+
+# Under $HOME so podman machine (macOS) can mount it; only this directory enters the container.
+base="${XDG_CACHE_HOME:-$HOME/.cache}/agent-token"
+mkdir -p "$base"
+run=$(mktemp -d "$base/run.XXXXXX")
+refresh() { "$here/agent-token" "$repo" >"$run/token.new" && mv "$run/token.new" "$run/token"; }
+refresh
+# Agent tokens live 1h; renew well before that.
+(while sleep 2700; do refresh || echo "agent-run: token refresh failed" >&2; done) &
+loop=$!
+# pkill -P: the loop's sleep would outlive it and keep the caller's output open.
+trap 'pkill -P "$loop" 2>/dev/null; kill "$loop" 2>/dev/null; rm -rf "$run"' EXIT
+
+bot="${AGENT_APP_SLUG}[bot]"
+id=$(curl -fsS "https://api.github.com/users/${AGENT_APP_SLUG}%5Bbot%5D" | jq -r .id)
+email="$id+$bot@users.noreply.github.com"
+
+# Same paths inside and out, so git worktrees (whose .git points elsewhere) still resolve.
+mounts=(-v "$top:$top" -w "$PWD")
+common=$(git -C "$top" rev-parse --path-format=absolute --git-common-dir)
+case $common in "$top"/*) ;; *) mounts+=(-v "$common:$common") ;; esac
+
+# shellcheck disable=SC2206 # extra podman flags are meant to split into words
+extra=(${AGENT_PODMAN_ARGS:-})
+
+podman run --rm -it --userns=keep-id:uid=1000,gid=1000 \
+  "${mounts[@]}" \
+  -v "$run:/run/agent:ro" \
+  -v agent-claude:/home/node/.claude \
+  -e CLAUDE_CONFIG_DIR=/home/node/.claude \
+  -e CLAUDE_CODE_OAUTH_TOKEN -e ANTHROPIC_API_KEY \
+  -e GIT_AUTHOR_NAME="$bot" -e GIT_AUTHOR_EMAIL="$email" \
+  -e GIT_COMMITTER_NAME="$bot" -e GIT_COMMITTER_EMAIL="$email" \
+  ${extra[@]+"${extra[@]}"} \
+  "$image" "$@"

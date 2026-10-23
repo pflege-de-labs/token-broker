@@ -1,0 +1,29 @@
+# Agent sandbox: Claude Code with git and gh, authenticated only by the agent token that
+# agent-run mounts at /run/agent/token. See docs/local.md.
+FROM docker.io/library/node:22-bookworm-slim@sha256:ceb43e5c219139035fb742900629e4abed89fe0997f7c03250c499e1f2710c9e
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl git jq gnupg \
+ && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli.gpg \
+ && echo "deb [signed-by=/usr/share/keyrings/githubcli.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends gh \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g @anthropic-ai/claude-code && npm cache clean --force
+
+# The host renews the token file every 45 minutes, so git and gh read it on every call
+# instead of taking it from the environment once.
+COPY gh /usr/local/bin/gh
+RUN git config --system credential.https://github.com.helper \
+      '!f() { test "$1" = get && echo username=x-access-token && echo "password=$(cat /run/agent/token)"; }; f'
+# No SSH keys in here by design: push and fetch GitHub over HTTPS with the agent token.
+RUN git config --system url."https://github.com/".insteadOf "git@github.com:" \
+ && git config --system --add url."https://github.com/".insteadOf "ssh://git@github.com/"
+
+# Exists in the image so a fresh named volume mounted here is owned by node.
+RUN mkdir -p /home/node/.claude && chown node:node /home/node/.claude
+
+USER node
+WORKDIR /work
+ENTRYPOINT ["claude"]

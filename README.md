@@ -30,21 +30,11 @@ export LOGIN_APP_CLIENT_ID=<client ID>
 The first run prints a code for <https://github.com/login/device>. The login token is cached
 in `~/.cache/agent-token/login.json` (mode 600) for 8 hours, so later runs need no browser.
 
-Run the agent with only that token. A container keeps your own `~/.ssh`, `~/.config/gh` and
-`~/.gitconfig` out of reach:
-
-```sh
-GH_TOKEN="$(./agent-token my-org/my-repo)" || exit 1
-podman run --rm -it -v "$PWD":/work -w /work \
-  -e GH_TOKEN="$GH_TOKEN" \
-  -e GIT_AUTHOR_NAME="<app>[bot]" -e GIT_AUTHOR_EMAIL="<bot user ID>+<app>[bot]@users.noreply.github.com" \
-  -e GIT_COMMITTER_NAME="<app>[bot]" -e GIT_COMMITTER_EMAIL="<bot user ID>+<app>[bot]@users.noreply.github.com" \
-  <agent image> sh -c 'gh auth setup-git && claude'
-```
-
-`gh auth setup-git` makes git push over HTTPS with `GH_TOKEN`. The bot user ID is not the App
-ID; see [docs/github-apps.md](docs/github-apps.md#commit-identity-of-the-agent). Without a
-container, deny the agent read access to `~/.ssh`, `~/.config/gh` and `~/.cache/agent-token`.
+To run the agent with only that token, use the container setup in
+[docs/local.md](docs/local.md): `agent-run` starts Claude Code with your checkout, renews the
+token during long sessions and keeps your own keys and `gh` login out of the container.
+Without a container, deny the agent read access to `~/.ssh`, `~/.config/gh` and
+`~/.cache/agent-token`.
 
 Commits made with local git are not signed. Merge agent PRs with **squash**, so the commit on
 a branch that requires signatures is created and signed by GitHub.
