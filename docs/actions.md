@@ -37,4 +37,4 @@ jobs:
           github_token: ${{ steps.agent.outputs.token }}
 ```
 
-The token only covers the repo the workflow runs in, and expires after 1h.
+The token only covers the repo the workflow runs in: the broker requires both the `repository` claim and `sub` (classic `repo:owner/name:…` or immutable `repo:owner@ID/name@ID:…`, IDs checked against the signed ID claims) to name the requested repo. It expires after 1h.

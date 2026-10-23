@@ -44,10 +44,20 @@ func signJWT(t *testing.T, claims map[string]any) string {
 }
 
 func actionsToken(t *testing.T, repo, aud string) string {
-	return signJWT(t, map[string]any{
-		"iss": testIssuer, "aud": aud, "repository": repo, "actor": "dev", "run_id": "7",
+	return actionsTokenWith(t, map[string]any{"repository": repo, "aud": aud, "sub": "repo:" + repo + ":ref:refs/heads/main"})
+}
+
+// actionsTokenWith signs an Actions token for acme/app, with claims overridden by overrides.
+func actionsTokenWith(t *testing.T, overrides map[string]any) string {
+	claims := map[string]any{
+		"iss": testIssuer, "aud": "token-broker", "repository": "acme/app", "actor": "dev", "run_id": "7",
+		"sub": "repo:acme/app:ref:refs/heads/main", "repository_id": "1431", "repository_owner_id": "9436",
 		"iat": time.Now().Unix(), "exp": time.Now().Add(5 * time.Minute).Unix(),
-	})
+	}
+	for k, v := range overrides {
+		claims[k] = v
+	}
+	return signJWT(t, claims)
 }
 
 // minted holds the last agent token request body sent to the fake GitHub.
@@ -114,6 +124,12 @@ func TestHandleToken(t *testing.T) {
 		{"actions issued", actionsToken(t, "acme/app", "token-broker"), "acme/app", http.StatusOK},
 		{"actions other repo", actionsToken(t, "acme/other", "token-broker"), "acme/app", http.StatusForbidden},
 		{"actions wrong audience", actionsToken(t, "acme/app", "someone-else"), "acme/app", http.StatusUnauthorized},
+		{"actions pull_request subject", actionsTokenWith(t, map[string]any{"sub": "repo:acme/app:pull_request"}), "acme/app", http.StatusOK},
+		{"actions immutable subject", actionsTokenWith(t, map[string]any{"sub": "repo:acme@9436/app@1431:ref:refs/heads/main"}), "acme/app", http.StatusOK},
+		{"actions subject other repo", actionsTokenWith(t, map[string]any{"sub": "repo:acme/other:ref:refs/heads/main"}), "acme/app", http.StatusForbidden},
+		{"actions subject repo name prefix", actionsTokenWith(t, map[string]any{"sub": "repo:acme/app-fork:ref:refs/heads/main"}), "acme/app", http.StatusForbidden},
+		{"actions immutable subject other repo ID", actionsTokenWith(t, map[string]any{"sub": "repo:acme@9436/app@9999:ref:refs/heads/main"}), "acme/app", http.StatusForbidden},
+		{"actions missing subject", actionsTokenWith(t, map[string]any{"sub": ""}), "acme/app", http.StatusForbidden},
 		{"actions forged signature", actionsToken(t, "acme/app", "token-broker") + "x", "acme/app", http.StatusUnauthorized},
 	}
 	for _, tt := range tests {

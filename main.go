@@ -66,11 +66,14 @@ type broker struct {
 
 // Claims we use from GitHub Actions OIDC tokens.
 type actionsClaims struct {
-	Repository     string `json:"repository"`
-	Actor          string `json:"actor"`
-	Ref            string `json:"ref"`
-	JobWorkflowRef string `json:"job_workflow_ref"`
-	RunID          string `json:"run_id"`
+	Subject           string `json:"sub"`
+	Repository        string `json:"repository"`
+	RepositoryID      string `json:"repository_id"`
+	RepositoryOwnerID string `json:"repository_owner_id"`
+	Actor             string `json:"actor"`
+	Ref               string `json:"ref"`
+	JobWorkflowRef    string `json:"job_workflow_ref"`
+	RunID             string `json:"run_id"`
 }
 
 func main() {
@@ -212,10 +215,14 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 			fail(http.StatusUnauthorized, "unauthenticated", "unreadable Actions OIDC claims", "err", err)
 			return
 		}
-		audit = append(audit, "actor", c.Actor, "workflow_repo", c.Repository, "ref", c.Ref, "job_workflow_ref", c.JobWorkflowRef, "run_id", c.RunID)
+		audit = append(audit, "actor", c.Actor, "workflow_repo", c.Repository, "sub", c.Subject, "ref", c.Ref, "job_workflow_ref", c.JobWorkflowRef, "run_id", c.RunID)
 		// A workflow may only get a token for the repo it runs in.
 		if !strings.EqualFold(c.Repository, req.Repo) {
 			fail(http.StatusForbidden, "denied", "Actions token is for a different repo")
+			return
+		}
+		if !subjectMatches(c, owner, name) {
+			fail(http.StatusForbidden, "denied", "Actions token subject is for a different repo")
 			return
 		}
 	} else {
@@ -282,6 +289,22 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 	slog.Info("token issued", append([]any{"via", via, "expires_at", tok.ExpiresAt}, audit...)...)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"token": tok.Token, "expires_at": tok.ExpiresAt})
+}
+
+// subjectMatches reports whether sub names owner/name, in either GitHub's classic form
+// "repo:owner/name:..." or the immutable "repo:owner@ownerID/name@repoID:..." form, whose
+// IDs must also match the signed ID claims (a re-created repo of the same name gets new IDs).
+func subjectMatches(c actionsClaims, owner, name string) bool {
+	sub := strings.ToLower(c.Subject)
+	classic := strings.ToLower("repo:" + owner + "/" + name + ":")
+	if strings.HasPrefix(sub, classic) {
+		return true
+	}
+	if c.RepositoryOwnerID == "" || c.RepositoryID == "" {
+		return false
+	}
+	immutable := strings.ToLower("repo:" + owner + "@" + c.RepositoryOwnerID + "/" + name + "@" + c.RepositoryID + ":")
+	return strings.HasPrefix(sub, immutable)
 }
 
 type installationToken struct {
