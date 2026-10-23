@@ -1,0 +1,12 @@
+# Prometheus Operator objects: a default render never touches them.
+metrics:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+config:
+  appId: "123456"
+  org: acme
+  loginClientId: Iv23ci-login-client
+secret:
+  privateKey: ci-not-a-real-key
+  loginClientSecret: ci-login-secret

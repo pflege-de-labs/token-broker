@@ -1,0 +1,23 @@
+# Ingress and HTTPRoute, the two ways developers and runners reach /token.
+ingress:
+  enabled: true
+  hosts:
+    - host: token-broker.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: token-broker-tls
+      hosts:
+        - token-broker.example.com
+httpRoute:
+  enabled: true
+  hostnames:
+    - token-broker.example.com
+config:
+  appId: "123456"
+  org: acme
+  loginClientId: Iv23ci-login-client
+secret:
+  privateKey: ci-not-a-real-key
+  loginClientSecret: ci-login-secret

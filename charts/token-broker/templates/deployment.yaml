@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "token-broker.fullname" . }}
+  labels:
+    {{- include "token-broker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "token-broker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- /* roll pods when the chart-managed secret changes */}}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "token-broker.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "token-broker.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: LISTEN_ADDR
+              value: ":8080"
+            - name: GITHUB_APP_ID
+              value: {{ required "config.appId is required" .Values.config.appId | quote }}
+            - name: GITHUB_ORG
+              value: {{ required "config.org is required" .Values.config.org | quote }}
+            - name: LOGIN_APP_CLIENT_ID
+              value: {{ required "config.loginClientId is required" .Values.config.loginClientId | quote }}
+            - name: GITHUB_APP_PRIVATE_KEY_FILE
+              value: /etc/token-broker/private-key.pem
+            - name: LOGIN_APP_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "token-broker.secretName" . }}
+                  key: login-client-secret
+            {{- with .Values.config.apiUrl }}
+            - name: GITHUB_API_URL
+              value: {{ . | quote }}
+            {{- end }}
+            - name: ACTIONS_OIDC_AUDIENCE
+              value: {{ .Values.config.actionsOidc.audience | quote }}
+            {{- with .Values.config.actionsOidc.issuer }}
+            - name: ACTIONS_OIDC_ISSUER
+              value: {{ . | quote }}
+            {{- end }}
+            {{- range $k, $v := .Values.extraEnv }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: app-key
+              mountPath: /etc/token-broker
+              readOnly: true
+      volumes:
+        # Only the key is projected; the client secret arrives as an env var.
+        - name: app-key
+          secret:
+            secretName: {{ include "token-broker.secretName" . }}
+            defaultMode: 0440
+            items:
+              - key: private-key.pem
+                path: private-key.pem
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

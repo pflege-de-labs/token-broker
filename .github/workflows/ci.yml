@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # A branch with no open PR gets no image otherwise.
+  workflow_dispatch:
+
+# A PR gets a fresh run per push; main pushes are not cancelled because each commit must produce its own image.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+# Shared steps come from the public pflege-de-labs/github-workflows, as in pflege-de/renovate-dashboard.
+jobs:
+  checks:
+    uses: pflege-de-labs/github-workflows/.github/workflows/go-checks.yml@cef33cface64a7ac3c33a5a8aea652095de518f7 # v1.1.0
+    with:
+      go-version: stable
+      golangci-lint-version: v2.14.0
+
+  chart:
+    uses: pflege-de-labs/github-workflows/.github/workflows/helm-lint.yml@cef33cface64a7ac3c33a5a8aea652095de518f7 # v1.1.0
+    with:
+      chart: charts/token-broker
+      assert-command: scripts/check-chart-render.sh charts/token-broker
+
+  # No image ever exists for a commit whose checks failed.
+  image:
+    needs: checks
+    uses: pflege-de-labs/github-workflows/.github/workflows/image-build.yml@cef33cface64a7ac3c33a5a8aea652095de518f7 # v1.1.0
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+  # A transient PR branch has no reason to leave a trace in a findings tool.
+  secobserve:
+    needs: image
+    if: github.event_name != 'pull_request'
+    uses: pflege-de-labs/github-workflows/.github/workflows/secobserve-image.yml@cef33cface64a7ac3c33a5a8aea652095de518f7 # v1.1.0
+    permissions:
+      contents: read
+      packages: read
+    with:
+      image: ${{ needs.image.outputs.image }}
+      digest: ${{ needs.image.outputs.digest }}
+      tag: ${{ needs.image.outputs.short-sha }}
+    secrets:
+      SO_API_TOKEN: ${{ secrets.SO_API_TOKEN }}

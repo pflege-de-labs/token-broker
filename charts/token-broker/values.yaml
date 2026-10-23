@@ -1,0 +1,149 @@
+# Default values for token-broker.
+
+# Stateless; a second replica covers pod restarts. Add anti-affinity for node failures.
+replicaCount: 2
+
+image:
+  repository: ghcr.io/pflege-de/token-broker
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  # The broker never talks to the Kubernetes API.
+  automount: false
+  annotations: {}
+  # If not set and create is true, a name is generated using the fullname template.
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  # Secret volume files are root-owned; group read lets the non-root process load the key.
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Serves /token, the probes and /metrics.
+service:
+  type: ClusterIP
+  port: 8080
+
+# Broker settings, rendered as environment variables.
+config:
+  # GitHub App ID of the agent app (GITHUB_APP_ID). Required.
+  appId: ""
+  # Only repos in this org get tokens (GITHUB_ORG). Required.
+  org: ""
+  # Client ID of the login app used for the developer device flow (LOGIN_APP_CLIENT_ID). Required.
+  loginClientId: ""
+  # GitHub API base URL (GITHUB_API_URL). Empty uses https://api.github.com.
+  apiUrl: ""
+  actionsOidc:
+    # Audience workflows must request (ACTIONS_OIDC_AUDIENCE).
+    audience: token-broker
+    # Empty uses https://token.actions.githubusercontent.com (ACTIONS_OIDC_ISSUER).
+    issuer: ""
+
+# Name of a pre-existing Secret with the keys `private-key.pem` (agent app private
+# key) and `login-client-secret` (login app client secret). When set, the chart
+# does not render its own Secret and `secret` below is ignored.
+existingSecret: ""
+
+# Rendered into a chart-managed Secret when existingSecret is empty.
+secret:
+  privateKey: ""
+  loginClientSecret: ""
+
+metrics:
+  # Requires the Prometheus Operator CRDs. Scrapes /metrics on the service port.
+  serviceMonitor:
+    enabled: false
+    interval: ""
+    scrapeTimeout: ""
+    extraLabels: {}
+    annotations: {}
+    relabelings: []
+    metricRelabelings: []
+
+# Developer and runner access to /token. Keep it internal where possible: the
+# device-flow client ID is public, so a reachable broker invites phishing.
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: token-broker.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+    # - secretName: token-broker-tls
+    #   hosts:
+    #     - token-broker.local
+
+# Expose the broker via a Gateway API HTTPRoute.
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway
+    sectionName: http
+    # namespace: default
+  hostnames:
+  - token-broker.local
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+
+resources: {}
+  # requests:
+  #   cpu: 10m
+  #   memory: 32Mi
+  # limits:
+  #   memory: 64Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+# /readyz calls GitHub with the app key, which can take longer than the 1s default timeout.
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: http
+  timeoutSeconds: 5
+  periodSeconds: 15
+
+extraEnv: {}
+
+# Additional manifests rendered with the release, run through `tpl`; e.g. a
+# SealedSecret or ExternalSecret providing `existingSecret`.
+extraObjects: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

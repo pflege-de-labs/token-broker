@@ -1,0 +1,16 @@
+# Credentials shipped with the release (e.g. a SealedSecret), the way cc-gitops deploys it.
+config:
+  appId: "123456"
+  org: acme
+  loginClientId: Iv23ci-login-client
+existingSecret: token-broker-credentials
+extraObjects:
+  - apiVersion: bitnami.com/v1alpha1
+    kind: SealedSecret
+    metadata:
+      name: token-broker-credentials
+      namespace: "{{ .Release.Namespace }}"
+    spec:
+      encryptedData:
+        private-key.pem: ci-sealed
+        login-client-secret: ci-sealed
