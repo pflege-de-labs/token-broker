@@ -138,6 +138,10 @@ readinessProbe:
 
 extraEnv: {}
 
+# Additional manifests rendered with the release, run through `tpl`; e.g. a
+# SealedSecret or ExternalSecret providing `existingSecret`.
+extraObjects: []
+
 nodeSelector: {}
 
 tolerations: []

@@ -36,6 +36,13 @@ fi
 [ "$(echo "$existing" | grep -c "token-broker-credentials")" -eq 2 ] \
   || fail "existingSecret is not used for both the key volume and the client secret"
 
+# extraObjects render, and through tpl, so they can follow the release namespace.
+extra=$(helm template token-broker "$chart" --namespace ai --values "$chart/ci/extra-objects-values.yaml")
+echo "$extra" | grep -q "^kind: SealedSecret$" \
+  || fail "extraObjects are not rendered"
+echo "$extra" | grep -A4 "^kind: SealedSecret$" | grep -qE "namespace: '?ai'?$" \
+  || fail "extraObjects are not run through tpl"
+
 # Missing credentials must fail the render, not deploy a broker that crashes on start.
 if helm template token-broker "$chart" >/dev/null 2>&1; then
   fail "chart renders without required config"
