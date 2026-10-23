@@ -38,3 +38,20 @@ jobs:
 ```
 
 The token only covers the repo the workflow runs in: the broker requires both the `repository` claim and `sub` (classic `repo:owner/name:…` or immutable `repo:owner@ID/name@ID:…`, IDs checked against the signed ID claims) to name the requested repo. It expires after 1h.
+
+## Restricting refs and workflows (optional)
+
+By default any workflow in a repo the app is installed on may get a token. Two chart values
+narrow that; both are lists of patterns where `*` matches any characters, including `/`:
+
+```yaml
+config:
+  actionsOidc:
+    # `ref` claim: only the default branch and release tags
+    allowedRefs: [refs/heads/main, "refs/tags/v*"]
+    # `job_workflow_ref` claim: only the shared agent workflow
+    allowedWorkflows: ["pflege-de/agent-workflows/.github/workflows/agent.yml@*"]
+```
+
+A request must match one pattern of each configured list. Empty lists apply no restriction.
+Pull request runs carry `ref: refs/pull/<n>/merge`, so `allowedRefs` without `refs/pull/*` blocks agents on PRs.

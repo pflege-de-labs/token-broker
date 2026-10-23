@@ -59,6 +59,18 @@ if helm template token-broker "$chart" --values "$chart/ci/default-values.yaml" 
   fail "public route renders without parentRefs"
 fi
 
+# Actions allowlists stay off by default and reach the broker as comma-separated env vars.
+if echo "$default" | grep -q "ACTIONS_ALLOWED_"; then
+  fail "Actions allowlists set without being configured"
+fi
+lists=$(helm template token-broker "$chart" --values "$chart/ci/default-values.yaml" \
+  --set 'config.actionsOidc.allowedRefs={refs/heads/main,refs/tags/*}' \
+  --set 'config.actionsOidc.allowedWorkflows={acme/wf/.github/workflows/agent.yml@*}')
+echo "$lists" | grep -A1 "name: ACTIONS_ALLOWED_REFS" | grep -q 'value: "refs/heads/main,refs/tags/\*"' \
+  || fail "allowedRefs not rendered as ACTIONS_ALLOWED_REFS"
+echo "$lists" | grep -A1 "name: ACTIONS_ALLOWED_WORKFLOWS" | grep -q 'value: "acme/wf/.github/workflows/agent.yml@\*"' \
+  || fail "allowedWorkflows not rendered as ACTIONS_ALLOWED_WORKFLOWS"
+
 # Missing credentials must fail the render, not deploy a broker that crashes on start.
 if helm template token-broker "$chart" >/dev/null 2>&1; then
   fail "chart renders without required config"

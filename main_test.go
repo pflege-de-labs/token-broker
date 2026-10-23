@@ -191,3 +191,65 @@ func TestHandleActionsToken(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchesAny(t *testing.T) {
+	tests := []struct {
+		patterns []string
+		s        string
+		want     bool
+	}{
+		{nil, "refs/heads/anything", true},
+		{[]string{"refs/heads/main"}, "refs/heads/main", true},
+		{[]string{"refs/heads/main"}, "refs/heads/main-old", false},
+		{[]string{"refs/heads/*"}, "refs/heads/feat/x", true},
+		{[]string{"refs/heads/*"}, "refs/pull/1/merge", false},
+		{[]string{"acme/wf/.github/workflows/agent.yml@*"}, "acme/wf/.github/workflows/agent.yml@refs/heads/main", true},
+		{[]string{"acme/wf/.github/workflows/agent.yml@*"}, "acme/wf/.github/workflows/agent.yml.evil@refs/heads/main", false},
+		{[]string{"refs/heads/a.b"}, "refs/heads/aXb", false},
+	}
+	for _, tt := range tests {
+		if got := matchesAny(tt.patterns, tt.s); got != tt.want {
+			t.Errorf("matchesAny(%q, %q) = %v, want %v", tt.patterns, tt.s, got, tt.want)
+		}
+	}
+}
+
+func TestActionsAllowlists(t *testing.T) {
+	const wf = "acme/wf/.github/workflows/agent.yml@refs/heads/main"
+	tests := []struct {
+		name                string
+		refs, workflows     []string
+		ref, jobWorkflowRef string
+		want                int
+	}{
+		{"no lists", nil, nil, "refs/heads/feat", "acme/app/.github/workflows/x.yml@refs/heads/feat", http.StatusOK},
+		{"ref allowed", []string{"refs/heads/main"}, nil, "refs/heads/main", wf, http.StatusOK},
+		{"ref denied", []string{"refs/heads/main"}, nil, "refs/heads/feat", wf, http.StatusForbidden},
+		{"workflow allowed", nil, []string{"acme/wf/.github/workflows/agent.yml@*"}, "refs/heads/feat", wf, http.StatusOK},
+		{"workflow denied", nil, []string{"acme/wf/.github/workflows/agent.yml@*"}, "refs/heads/main", "acme/app/.github/workflows/own.yml@refs/heads/main", http.StatusForbidden},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, minted := newTestBroker(t)
+			b.cfg.allowedRefs, b.cfg.allowedWorkflows = tt.refs, tt.workflows
+			bearer := actionsTokenWith(t, map[string]any{"ref": tt.ref, "job_workflow_ref": tt.jobWorkflowRef})
+			req := httptest.NewRequest(http.MethodPost, "/token/actions", strings.NewReader(`{"repo":"acme/app"}`))
+			req.Header.Set("Authorization", "Bearer "+bearer)
+			rec := httptest.NewRecorder()
+			b.handleActionsToken(rec, req)
+			if rec.Code != tt.want {
+				t.Fatalf("status = %d, want %d: %s", rec.Code, tt.want, rec.Body)
+			}
+			if tt.want != http.StatusOK && *minted != nil {
+				t.Errorf("agent token minted on denied request")
+			}
+		})
+	}
+}
+
+func TestSplitList(t *testing.T) {
+	got := splitList(" refs/heads/main, ,refs/tags/* ")
+	if len(got) != 2 || got[0] != "refs/heads/main" || got[1] != "refs/tags/*" {
+		t.Errorf("splitList = %q", got)
+	}
+}

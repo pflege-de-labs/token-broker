@@ -54,6 +54,9 @@ type config struct {
 	apiURL      string
 	loginID     string // client ID of the low-privilege login app
 	loginSecret string
+	// Optional Actions allowlists (globs, `*` spans `/`); empty allows any ref or workflow.
+	allowedRefs      []string
+	allowedWorkflows []string
 }
 
 type broker struct {
@@ -89,12 +92,14 @@ func run() error {
 		return err
 	}
 	cfg := config{
-		appID:       os.Getenv("GITHUB_APP_ID"),
-		key:         key,
-		org:         os.Getenv("GITHUB_ORG"),
-		apiURL:      envOr("GITHUB_API_URL", "https://api.github.com"),
-		loginID:     os.Getenv("LOGIN_APP_CLIENT_ID"),
-		loginSecret: os.Getenv("LOGIN_APP_CLIENT_SECRET"),
+		appID:            os.Getenv("GITHUB_APP_ID"),
+		key:              key,
+		org:              os.Getenv("GITHUB_ORG"),
+		apiURL:           envOr("GITHUB_API_URL", "https://api.github.com"),
+		loginID:          os.Getenv("LOGIN_APP_CLIENT_ID"),
+		loginSecret:      os.Getenv("LOGIN_APP_CLIENT_SECRET"),
+		allowedRefs:      splitList(os.Getenv("ACTIONS_ALLOWED_REFS")),
+		allowedWorkflows: splitList(os.Getenv("ACTIONS_ALLOWED_WORKFLOWS")),
 	}
 	if cfg.appID == "" || cfg.org == "" || cfg.loginID == "" || cfg.loginSecret == "" {
 		return errors.New("GITHUB_APP_ID, GITHUB_ORG, LOGIN_APP_CLIENT_ID and LOGIN_APP_CLIENT_SECRET are required")
@@ -223,6 +228,14 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 		}
 		if !subjectMatches(c, owner, name) {
 			fail(http.StatusForbidden, "denied", "Actions token subject is for a different repo")
+			return
+		}
+		if !matchesAny(b.cfg.allowedRefs, c.Ref) {
+			fail(http.StatusForbidden, "denied", "Actions ref not allowed")
+			return
+		}
+		if !matchesAny(b.cfg.allowedWorkflows, c.JobWorkflowRef) {
+			fail(http.StatusForbidden, "denied", "Actions workflow not allowed")
 			return
 		}
 	} else {
@@ -430,6 +443,31 @@ func loadKey(path string) (*rsa.PrivateKey, error) {
 		return nil, errors.New("private key is not RSA")
 	}
 	return key, nil
+}
+
+// matchesAny reports whether s matches one of the glob patterns; an empty list matches everything.
+func matchesAny(patterns []string, s string) bool {
+	if len(patterns) == 0 {
+		return true
+	}
+	for _, p := range patterns {
+		// path.Match's `*` stops at `/`, which refs and workflow refs are full of.
+		re := "^" + strings.ReplaceAll(regexp.QuoteMeta(p), `\*`, ".*") + "$"
+		if regexp.MustCompile(re).MatchString(s) {
+			return true
+		}
+	}
+	return false
+}
+
+func splitList(s string) []string {
+	var out []string
+	for _, v := range strings.Split(s, ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 func envOr(name, fallback string) string {

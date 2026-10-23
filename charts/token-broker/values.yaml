@@ -60,6 +60,12 @@ config:
     audience: token-broker
     # Empty uses https://token.actions.githubusercontent.com (ACTIONS_OIDC_ISSUER).
     issuer: ""
+    # Optional allowlists; empty allows any. `*` matches any characters, including `/`.
+    # Patterns for the `ref` claim (ACTIONS_ALLOWED_REFS), e.g. refs/heads/main.
+    allowedRefs: []
+    # Patterns for the `job_workflow_ref` claim (ACTIONS_ALLOWED_WORKFLOWS), e.g.
+    # pflege-de/agent-workflows/.github/workflows/agent.yml@refs/heads/main.
+    allowedWorkflows: []
 
 # Name of a pre-existing Secret with the keys `private-key.pem` (agent app private
 # key) and `login-client-secret` (login app client secret). When set, the chart

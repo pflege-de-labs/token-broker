@@ -71,6 +71,14 @@ spec:
             - name: ACTIONS_OIDC_ISSUER
               value: {{ . | quote }}
             {{- end }}
+            {{- with .Values.config.actionsOidc.allowedRefs }}
+            - name: ACTIONS_ALLOWED_REFS
+              value: {{ join "," . | quote }}
+            {{- end }}
+            {{- with .Values.config.actionsOidc.allowedWorkflows }}
+            - name: ACTIONS_ALLOWED_WORKFLOWS
+              value: {{ join "," . | quote }}
+            {{- end }}
             {{- range $k, $v := .Values.extraEnv }}
             - name: {{ $k }}
               value: {{ $v | quote }}
