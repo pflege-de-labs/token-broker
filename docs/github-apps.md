@@ -26,6 +26,7 @@ The broker needs two org-owned GitHub Apps in `pflege-de`. Settings live under
 - [ ] *Subscribe to events:* none.
 - [ ] *Private keys:* one key generated. It goes only into the broker Secret as `private-key.pem`, never into a repo secret or onto a laptop. Delete the downloaded file afterwards.
 - [ ] *Install App* → `pflege-de` → **Only select repositories**: the repos agents may work on (none yet is fine).
+  - Every repo it is installed on must require a **code owner review** on its default branch and have a `CODEOWNERS` file naming human teams. The app has contents write, so its approvals otherwise count toward required reviews; bots cannot be code owners.
 - [ ] The app is **not** a bypass actor in any ruleset (repo or org). That includes `protect-default-branch` from github-ops.
 - [ ] Note the **App ID** (`config.appId`).
 
