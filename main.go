@@ -54,6 +54,9 @@ type config struct {
 	apiURL      string
 	loginID     string // client ID of the low-privilege login app
 	loginSecret string
+	// Optional Actions allowlists (globs, `*` spans `/`); empty allows any ref or workflow.
+	allowedRefs      []string
+	allowedWorkflows []string
 }
 
 type broker struct {
@@ -66,11 +69,14 @@ type broker struct {
 
 // Claims we use from GitHub Actions OIDC tokens.
 type actionsClaims struct {
-	Repository     string `json:"repository"`
-	Actor          string `json:"actor"`
-	Ref            string `json:"ref"`
-	JobWorkflowRef string `json:"job_workflow_ref"`
-	RunID          string `json:"run_id"`
+	Subject           string `json:"sub"`
+	Repository        string `json:"repository"`
+	RepositoryID      string `json:"repository_id"`
+	RepositoryOwnerID string `json:"repository_owner_id"`
+	Actor             string `json:"actor"`
+	Ref               string `json:"ref"`
+	JobWorkflowRef    string `json:"job_workflow_ref"`
+	RunID             string `json:"run_id"`
 }
 
 func main() {
@@ -86,12 +92,14 @@ func run() error {
 		return err
 	}
 	cfg := config{
-		appID:       os.Getenv("GITHUB_APP_ID"),
-		key:         key,
-		org:         os.Getenv("GITHUB_ORG"),
-		apiURL:      envOr("GITHUB_API_URL", "https://api.github.com"),
-		loginID:     os.Getenv("LOGIN_APP_CLIENT_ID"),
-		loginSecret: os.Getenv("LOGIN_APP_CLIENT_SECRET"),
+		appID:            os.Getenv("GITHUB_APP_ID"),
+		key:              key,
+		org:              os.Getenv("GITHUB_ORG"),
+		apiURL:           envOr("GITHUB_API_URL", "https://api.github.com"),
+		loginID:          os.Getenv("LOGIN_APP_CLIENT_ID"),
+		loginSecret:      os.Getenv("LOGIN_APP_CLIENT_SECRET"),
+		allowedRefs:      splitList(os.Getenv("ACTIONS_ALLOWED_REFS")),
+		allowedWorkflows: splitList(os.Getenv("ACTIONS_ALLOWED_WORKFLOWS")),
 	}
 	if cfg.appID == "" || cfg.org == "" || cfg.loginID == "" || cfg.loginSecret == "" {
 		return errors.New("GITHUB_APP_ID, GITHUB_ORG, LOGIN_APP_CLIENT_ID and LOGIN_APP_CLIENT_SECRET are required")
@@ -112,6 +120,7 @@ func run() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /token", b.handleToken)
+	mux.HandleFunc("POST /token/actions", b.handleActionsToken)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	mux.HandleFunc("GET /readyz", b.handleReady)
 	mux.Handle("GET /metrics", promhttp.Handler())
@@ -143,6 +152,19 @@ func newBroker(cfg config, actions *oidc.IDTokenVerifier, meter metric.Meter) (*
 		return nil, err
 	}
 	return &broker{cfg: cfg, client: &http.Client{Timeout: 10 * time.Second}, actions: actions, requests: requests, latency: latency}, nil
+}
+
+// handleActionsToken is the only path a public route should forward: it never accepts
+// login tokens, so the device flow stays reachable from the internal network only.
+func (b *broker) handleActionsToken(w http.ResponseWriter, r *http.Request) {
+	bearer, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if strings.Count(bearer, ".") != 2 {
+		attrs := metric.WithAttributes(attribute.String("outcome", "unauthenticated"), attribute.String("via", "actions"))
+		b.requests.Add(r.Context(), 1, attrs)
+		http.Error(w, "only GitHub Actions OIDC tokens are accepted here", http.StatusUnauthorized)
+		return
+	}
+	b.handleToken(w, r)
 }
 
 func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
@@ -198,10 +220,22 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 			fail(http.StatusUnauthorized, "unauthenticated", "unreadable Actions OIDC claims", "err", err)
 			return
 		}
-		audit = append(audit, "actor", c.Actor, "workflow_repo", c.Repository, "ref", c.Ref, "job_workflow_ref", c.JobWorkflowRef, "run_id", c.RunID)
+		audit = append(audit, "actor", c.Actor, "workflow_repo", c.Repository, "sub", c.Subject, "ref", c.Ref, "job_workflow_ref", c.JobWorkflowRef, "run_id", c.RunID)
 		// A workflow may only get a token for the repo it runs in.
 		if !strings.EqualFold(c.Repository, req.Repo) {
 			fail(http.StatusForbidden, "denied", "Actions token is for a different repo")
+			return
+		}
+		if !subjectMatches(c, owner, name) {
+			fail(http.StatusForbidden, "denied", "Actions token subject is for a different repo")
+			return
+		}
+		if !matchesAny(b.cfg.allowedRefs, c.Ref) {
+			fail(http.StatusForbidden, "denied", "Actions ref not allowed")
+			return
+		}
+		if !matchesAny(b.cfg.allowedWorkflows, c.JobWorkflowRef) {
+			fail(http.StatusForbidden, "denied", "Actions workflow not allowed")
 			return
 		}
 	} else {
@@ -268,6 +302,22 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 	slog.Info("token issued", append([]any{"via", via, "expires_at", tok.ExpiresAt}, audit...)...)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"token": tok.Token, "expires_at": tok.ExpiresAt})
+}
+
+// subjectMatches reports whether sub names owner/name, in either GitHub's classic form
+// "repo:owner/name:..." or the immutable "repo:owner@ownerID/name@repoID:..." form, whose
+// IDs must also match the signed ID claims (a re-created repo of the same name gets new IDs).
+func subjectMatches(c actionsClaims, owner, name string) bool {
+	sub := strings.ToLower(c.Subject)
+	classic := strings.ToLower("repo:" + owner + "/" + name + ":")
+	if strings.HasPrefix(sub, classic) {
+		return true
+	}
+	if c.RepositoryOwnerID == "" || c.RepositoryID == "" {
+		return false
+	}
+	immutable := strings.ToLower("repo:" + owner + "@" + c.RepositoryOwnerID + "/" + name + "@" + c.RepositoryID + ":")
+	return strings.HasPrefix(sub, immutable)
 }
 
 type installationToken struct {
@@ -393,6 +443,31 @@ func loadKey(path string) (*rsa.PrivateKey, error) {
 		return nil, errors.New("private key is not RSA")
 	}
 	return key, nil
+}
+
+// matchesAny reports whether s matches one of the glob patterns; an empty list matches everything.
+func matchesAny(patterns []string, s string) bool {
+	if len(patterns) == 0 {
+		return true
+	}
+	for _, p := range patterns {
+		// path.Match's `*` stops at `/`, which refs and workflow refs are full of.
+		re := "^" + strings.ReplaceAll(regexp.QuoteMeta(p), `\*`, ".*") + "$"
+		if regexp.MustCompile(re).MatchString(s) {
+			return true
+		}
+	}
+	return false
+}
+
+func splitList(s string) []string {
+	var out []string
+	for _, v := range strings.Split(s, ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 func envOr(name, fallback string) string {

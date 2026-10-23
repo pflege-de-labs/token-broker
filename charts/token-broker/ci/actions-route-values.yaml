@@ -1,0 +1,18 @@
+# Public Actions route on a shared host, under a path prefix.
+actionsRoute:
+  enabled: true
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
+      namespace: gateway-system
+  hostnames:
+    - public.example.com
+  path: /broker/token/actions
+config:
+  appId: "123456"
+  org: acme
+  loginClientId: Iv23ci-login-client
+secret:
+  privateKey: ci-not-a-real-key
+  loginClientSecret: ci-login-secret

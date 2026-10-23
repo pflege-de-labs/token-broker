@@ -43,6 +43,34 @@ echo "$extra" | grep -q "^kind: SealedSecret$" \
 echo "$extra" | grep -A4 "^kind: SealedSecret$" | grep -qE "namespace: '?ai'?$" \
   || fail "extraObjects are not run through tpl"
 
+# The public route must expose exactly POST <path> -> /token/actions, nothing else.
+actions=$(helm template token-broker "$chart" --values "$chart/ci/actions-route-values.yaml" \
+  --show-only templates/httproute-actions.yaml)
+[ "$(echo "$actions" | grep -c "value: ")" -eq 1 ] \
+  || fail "public route matches more than one path"
+echo "$actions" | grep -q 'value: "/broker/token/actions"' \
+  || fail "public route does not match the configured path"
+echo "$actions" | grep -q "method: POST" \
+  || fail "public route is not restricted to POST"
+echo "$actions" | grep -q "replaceFullPath: /token/actions" \
+  || fail "public route does not rewrite to the Actions-only endpoint"
+if helm template token-broker "$chart" --values "$chart/ci/default-values.yaml" \
+     --set actionsRoute.enabled=true >/dev/null 2>&1; then
+  fail "public route renders without parentRefs"
+fi
+
+# Actions allowlists stay off by default and reach the broker as comma-separated env vars.
+if echo "$default" | grep -q "ACTIONS_ALLOWED_"; then
+  fail "Actions allowlists set without being configured"
+fi
+lists=$(helm template token-broker "$chart" --values "$chart/ci/default-values.yaml" \
+  --set 'config.actionsOidc.allowedRefs={refs/heads/main,refs/tags/*}' \
+  --set 'config.actionsOidc.allowedWorkflows={acme/wf/.github/workflows/agent.yml@*}')
+echo "$lists" | grep -A1 "name: ACTIONS_ALLOWED_REFS" | grep -q 'value: "refs/heads/main,refs/tags/\*"' \
+  || fail "allowedRefs not rendered as ACTIONS_ALLOWED_REFS"
+echo "$lists" | grep -A1 "name: ACTIONS_ALLOWED_WORKFLOWS" | grep -q 'value: "acme/wf/.github/workflows/agent.yml@\*"' \
+  || fail "allowedWorkflows not rendered as ACTIONS_ALLOWED_WORKFLOWS"
+
 # Missing credentials must fail the render, not deploy a broker that crashes on start.
 if helm template token-broker "$chart" >/dev/null 2>&1; then
   fail "chart renders without required config"
