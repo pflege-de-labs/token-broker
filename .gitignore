@@ -1,6 +1,4 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
+# GitHub "Go" template, as github-ops creates the remote with gitignore_template: Go.
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -18,9 +16,6 @@ coverage.*
 *.coverprofile
 profile.cov
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
 # Go workspace file
 go.work
 go.work.sum
@@ -28,6 +23,15 @@ go.work.sum
 # env file
 .env
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# --- token-broker ---
+
+# The built binary, anchored so it does not also match charts/token-broker/.
+/token-broker
+/dist/
+.DS_Store
+
+# helm-ls cache
+.helm_ls_cache/
+
+# Claude session handoffs contain transcripts.
+/.claude/handoffs/

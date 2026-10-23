@@ -1,0 +1,97 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":gitSignOff",
+    "helpers:pinGitHubActionDigests",
+    ":dependencyDashboard"
+  ],
+  "pinDigests": true,
+  "separateMajorMinor": true,
+  "separateMinorPatch": false,
+  "pruneStaleBranches": true,
+  "baseBranchPatterns": [
+    "main"
+  ],
+  "configMigration": true,
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "rebaseWhen": "conflicted",
+  "labels": [
+    "dependencies"
+  ],
+  "automergeStrategy": "auto",
+  "automergeType": "pr",
+  "timezone": "Europe/Berlin",
+  "assignAutomerge": true,
+  "ignoreDeps": [
+    "github.com/pflege-de/token-broker"
+  ],
+  "packageRules": [
+    {
+      "description": "Go modules settle before they are proposed, and every update tidies the module it touched.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "minimumReleaseAge": "5 days",
+      "postUpdateOptions": [
+        "gomodTidy"
+      ]
+    },
+    {
+      "description": "otel, its metric/sdk packages and the exporters are one release train.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "go.opentelemetry.io/**"
+      ],
+      "groupName": "opentelemetry"
+    },
+    {
+      "description": "The Go toolchain changes codegen and runtime behaviour for everything it builds, so it never rides along with a library update.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "golang",
+        "toolchain"
+      ],
+      "groupName": "go toolchain",
+      "automerge": false
+    },
+    {
+      "description": "Base images are pinned by digest; a rebuild changes what ships, but CI has to pass first.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "*"
+      ],
+      "versioning": "docker",
+      "automerge": true,
+      "minimumReleaseAge": "0"
+    },
+    {
+      "description": "Actions are pinned to a commit sha and push signed images, so automerge waits on CI.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github actions",
+      "groupSlug": "all-github-action",
+      "automerge": true,
+      "pinDigests": true
+    },
+    {
+      "description": "A major action bump can rename inputs, so it waits for a person.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false
+    }
+  ]
+}

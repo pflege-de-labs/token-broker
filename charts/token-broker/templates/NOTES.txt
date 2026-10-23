@@ -1,0 +1,13 @@
+token-broker issues agent tokens for repos in the {{ .Values.config.org }} org.
+{{- if .Values.httpRoute.enabled }}
+Broker URL: https://{{ .Values.httpRoute.hostnames | first }}
+{{- else if .Values.ingress.enabled }}
+Broker URL: http{{ if .Values.ingress.tls }}s{{ end }}://{{ (first .Values.ingress.hosts).host }}
+{{- else }}
+In-cluster URL: http://{{ include "token-broker.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+{{- end }}
+
+Developers: export TOKEN_BROKER_URL=<broker URL> LOGIN_APP_CLIENT_ID={{ .Values.config.loginClientId }}
+then run: agent-token {{ .Values.config.org }}/<repo>
+
+Workflows: request an OIDC token with audience "{{ .Values.config.actionsOidc.audience }}".

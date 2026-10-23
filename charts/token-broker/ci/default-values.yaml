@@ -1,0 +1,8 @@
+# The out-of-the-box path: chart-managed Secret, no ingress, no monitoring.
+config:
+  appId: "123456"
+  org: acme
+  loginClientId: Iv23ci-login-client
+secret:
+  privateKey: ci-not-a-real-key
+  loginClientSecret: ci-login-secret

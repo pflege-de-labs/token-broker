@@ -1,0 +1,10 @@
+# The build context is the Go module; everything else would only invalidate the COPY layer.
+.git
+.github
+.claude
+charts
+scripts
+docs
+*.md
+agent-token
+/token-broker
