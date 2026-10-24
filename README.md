@@ -1,20 +1,30 @@
 # token-broker
 
 Gives coding agents (e.g. Claude Code) their own GitHub identity instead of a developer's.
-The broker exchanges proof of who is asking for a short-lived token of a dedicated **agent
-GitHub App**: valid for one repository, for one hour, with contents, pull request and issue
-access only. Agent commits and PRs show up as `<app>[bot]`, so a human can review and approve
-them, and developer credentials never reach the agent.
+Developers and GitHub Actions workflows exchange proof of who they are for a short-lived token
+of a dedicated **agent GitHub App**. Agent commits and PRs show up as `<app>[bot]` and need a
+human review, and developer credentials never reach the agent.
+
+## Features
+
+- **Narrow tokens:** one repository, one hour, contents, pull request and issue access only.
+- **Developer login via device flow** with a permission-less login app; a token only for repos
+  the developer has write access to.
+- **GitHub Actions via OIDC:** `POST /token/actions`, safe to expose publicly, with optional
+  ref and workflow allowlists.
+- **Scoped to one org** and to repos the agent app is installed on.
+- **Private key stays in the broker;** agents and workstations never see it.
+- **Audit log** of every issued or denied token: who, which repo, why.
+- **Agent container** (`agent-run`) that runs Claude Code with only the agent token.
+- **Operations:** liveness and readiness probes, Prometheus metrics, signed image, Helm chart.
 
 | Caller | Proves identity with | Endpoint |
 |---|---|---|
 | Developer (local agent) | user token of a permission-less **login app**, via device flow | `POST /token` |
 | GitHub Actions workflow | the workflow's **OIDC token** | `POST /token/actions` (or `/token`) |
 
-A token is only issued if the developer has write access to the repository, or the OIDC
-token's `repository` and `sub` claims name it, and the agent app is installed there. The agent
-app's private key lives only in the broker. Every issued or denied token is logged with who,
-which repo and why.
+A token is issued only if the developer has write access to the repository, or the OIDC
+token's `repository` and `sub` claims name it, and the agent app is installed there.
 
 ## Use it locally
 
