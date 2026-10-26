@@ -6,8 +6,10 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl git jq gnupg \
  && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli.gpg \
  && echo "deb [signed-by=/usr/share/keyrings/githubcli.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
+ && curl -fsSL https://mise.jdx.dev/gpg-key.pub | gpg --dearmor -o /usr/share/keyrings/mise.gpg \
+ && echo "deb [signed-by=/usr/share/keyrings/mise.gpg] https://mise.jdx.dev/deb stable main" > /etc/apt/sources.list.d/mise.list \
  && apt-get update \
- && apt-get install -y --no-install-recommends gh \
+ && apt-get install -y --no-install-recommends gh mise make unzip ripgrep shellcheck python3 \
  && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g @anthropic-ai/claude-code && npm cache clean --force
@@ -21,9 +23,15 @@ RUN git config --system credential.https://github.com.helper \
 RUN git config --system url."https://github.com/".insteadOf "git@github.com:" \
  && git config --system --add url."https://github.com/".insteadOf "ssh://git@github.com/"
 
-# Exists in the image so a fresh named volume mounted here is owned by node.
-RUN mkdir -p /home/node/.claude && chown node:node /home/node/.claude
+# Exist in the image so fresh named volumes mounted here are owned by node.
+RUN mkdir -p /home/node/.claude /home/node/.local/share/mise /home/node/.cache \
+ && chown -R node:node /home/node/.claude /home/node/.local /home/node/.cache
 
 USER node
 WORKDIR /work
-ENTRYPOINT ["claude"]
+# Toolchains come per repo from its mise.toml; shims so Claude's non-interactive shells find them.
+ENV PATH=/home/node/.local/share/mise/shims:$PATH \
+    GOMODCACHE=/home/node/.cache/go-mod \
+    MISE_YES=1
+# The agent token lifts mise's GitHub API rate limit; a failed install must not block the session.
+ENTRYPOINT ["sh", "-c", "MISE_GITHUB_TOKEN=$(cat /run/agent/token) mise install || echo 'agent-run: mise install failed' >&2; exec claude \"$@\"", "claude"]

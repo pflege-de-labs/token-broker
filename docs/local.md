@@ -41,7 +41,23 @@ What it does:
 - rewrites GitHub SSH remotes to HTTPS, so git pushes with the agent token;
 - sets the commit identity to `<app>[bot] <<bot user ID>+<app>[bot]@users.noreply.github.com>`;
 - keeps Claude Code's settings in the named volume `agent-claude`;
-- maps your user to the container user, so files keep your ownership.
+- maps your user to the container user, so files keep your ownership;
+- installs the repo's toolchain from `mise.toml` or `.tool-versions` before Claude starts.
+
+## Toolchains
+
+The image has only tools every repo needs: git, `gh`, `jq`, `curl`, `make`, `unzip`, ripgrep,
+shellcheck, python3 and [mise](https://mise.jdx.dev). Everything else (Go, Terraform, Helm, …)
+comes from the repo's mise config, at exactly its pinned versions. Installs and caches live in
+the volumes `agent-mise` and `agent-cache` (Go module and build caches included), so only the
+first session per version downloads. A repo without a mise config gets no extra tools.
+
+`agent-run` trusts the mise config of the mounted checkout only. A failed `mise install` prints
+a warning and Claude starts anyway.
+
+Never mount cloud credentials (`~/.aws`, kubeconfigs): they are developer credentials. Let the
+agent write code and run `terraform plan`/`apply` in CI; for read access pass short-lived
+credentials of a read-only role via `AGENT_PODMAN_ARGS="-e AWS_..."`.
 
 `AGENT_IMAGE` selects another image, `AGENT_PODMAN_ARGS` adds podman flags (e.g.
 `--entrypoint sh` for a shell instead of Claude).
