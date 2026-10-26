@@ -12,7 +12,7 @@ human review, and developer credentials never reach the agent.
   the developer has write access to.
 - **GitHub Actions via OIDC:** `POST /token/actions`, safe to expose publicly, with optional
   ref and workflow allowlists.
-- **Scoped to one org** and to repos the agent app is installed on.
+- **Scoped to a list of orgs** and to repos the agent app is installed on.
 - **Private key stays in the broker;** agents and workstations never see it.
 - **Audit log** of every issued or denied token: who, which repo, why.
 - **Agent container** (`agent-run`) that runs Claude Code with only the agent token.
@@ -76,7 +76,7 @@ only; GitHub never calls it. Run it behind TLS.
 | Variable | |
 |---|---|
 | `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY_FILE` | agent app |
-| `GITHUB_ORG` | only repositories of this org get tokens |
+| `GITHUB_ORG` | only repositories of these orgs get tokens, comma-separated |
 | `LOGIN_APP_CLIENT_ID`, `LOGIN_APP_CLIENT_SECRET` | login app |
 | `ACTIONS_OIDC_AUDIENCE` | default `token-broker` |
 | `ACTIONS_OIDC_ISSUER` | default `https://token.actions.githubusercontent.com` |

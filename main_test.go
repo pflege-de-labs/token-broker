@@ -101,7 +101,7 @@ func newTestBroker(t *testing.T) (*broker, *map[string]any) {
 
 	keys := &oidc.StaticKeySet{PublicKeys: []crypto.PublicKey{&testKey.PublicKey}}
 	actions := oidc.NewVerifier(testIssuer, keys, &oidc.Config{ClientID: "token-broker"})
-	cfg := config{appID: "1", key: testKey, org: "acme", apiURL: gh.URL, loginID: "login-client", loginSecret: "s3cret"}
+	cfg := config{appID: "1", key: testKey, orgs: []string{"acme"}, apiURL: gh.URL, loginID: "login-client", loginSecret: "s3cret"}
 	b, err := newBroker(cfg, actions, noop.NewMeterProvider().Meter(""))
 	if err != nil {
 		t.Fatal(err)
@@ -251,5 +251,14 @@ func TestSplitList(t *testing.T) {
 	got := splitList(" refs/heads/main, ,refs/tags/* ")
 	if len(got) != 2 || got[0] != "refs/heads/main" || got[1] != "refs/tags/*" {
 		t.Errorf("splitList = %q", got)
+	}
+}
+
+func TestAllowedOrg(t *testing.T) {
+	c := config{orgs: []string{"acme", "beta"}}
+	for owner, want := range map[string]bool{"acme": true, "beta": true, "ACME": true, "Beta": true, "evil": false, "": false} {
+		if got := c.allowedOrg(owner); got != want {
+			t.Errorf("allowedOrg(%q) = %v, want %v", owner, got, want)
+		}
 	}
 }

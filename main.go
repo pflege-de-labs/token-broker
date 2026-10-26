@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -50,7 +51,7 @@ var namePattern = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 type config struct {
 	appID       string
 	key         *rsa.PrivateKey
-	org         string
+	orgs        []string // GITHUB_ORG, comma-separated
 	apiURL      string
 	loginID     string // client ID of the low-privilege login app
 	loginSecret string
@@ -94,14 +95,14 @@ func run() error {
 	cfg := config{
 		appID:            os.Getenv("GITHUB_APP_ID"),
 		key:              key,
-		org:              os.Getenv("GITHUB_ORG"),
+		orgs:             splitList(os.Getenv("GITHUB_ORG")),
 		apiURL:           envOr("GITHUB_API_URL", "https://api.github.com"),
 		loginID:          os.Getenv("LOGIN_APP_CLIENT_ID"),
 		loginSecret:      os.Getenv("LOGIN_APP_CLIENT_SECRET"),
 		allowedRefs:      splitList(os.Getenv("ACTIONS_ALLOWED_REFS")),
 		allowedWorkflows: splitList(os.Getenv("ACTIONS_ALLOWED_WORKFLOWS")),
 	}
-	if cfg.appID == "" || cfg.org == "" || cfg.loginID == "" || cfg.loginSecret == "" {
+	if cfg.appID == "" || len(cfg.orgs) == 0 || cfg.loginID == "" || cfg.loginSecret == "" {
 		return errors.New("GITHUB_APP_ID, GITHUB_ORG, LOGIN_APP_CLIENT_ID and LOGIN_APP_CLIENT_SECRET are required")
 	}
 	issuer := envOr("ACTIONS_OIDC_ISSUER", "https://token.actions.githubusercontent.com")
@@ -135,7 +136,7 @@ func run() error {
 		_ = srv.Shutdown(shutdownCtx)
 	}()
 
-	slog.Info("listening", "addr", srv.Addr, "org", cfg.org, "version", version)
+	slog.Info("listening", "addr", srv.Addr, "orgs", cfg.orgs, "version", version)
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -200,7 +201,7 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	audit = append(audit, "repo", req.Repo)
-	if !strings.EqualFold(owner, b.cfg.org) {
+	if !b.cfg.allowedOrg(owner) {
 		fail(http.StatusForbidden, "denied", "repo outside allowed org")
 		return
 	}
@@ -458,6 +459,11 @@ func matchesAny(patterns []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// allowedOrg ignores case like GitHub does for owner names.
+func (c config) allowedOrg(owner string) bool {
+	return slices.ContainsFunc(c.orgs, func(o string) bool { return strings.EqualFold(o, owner) })
 }
 
 func splitList(s string) []string {
