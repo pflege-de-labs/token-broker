@@ -1,4 +1,4 @@
-token-broker issues agent tokens for repos in the {{ .Values.config.org }} org.
+token-broker issues agent tokens for repos in: {{ .Values.config.org }}
 {{- if .Values.httpRoute.enabled }}
 Broker URL: https://{{ .Values.httpRoute.hostnames | first }}
 {{- else if .Values.ingress.enabled }}
@@ -8,6 +8,6 @@ In-cluster URL: http://{{ include "token-broker.fullname" . }}.{{ .Release.Names
 {{- end }}
 
 Developers: export TOKEN_BROKER_URL=<broker URL> LOGIN_APP_CLIENT_ID={{ .Values.config.loginClientId }}
-then run: agent-token {{ .Values.config.org }}/<repo>
+then run: agent-token <org>/<repo>
 
 Workflows: request an OIDC token with audience "{{ .Values.config.actionsOidc.audience }}".

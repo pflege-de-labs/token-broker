@@ -49,7 +49,7 @@ service:
 config:
   # GitHub App ID of the agent app (GITHUB_APP_ID). Required.
   appId: ""
-  # Only repos in this org get tokens (GITHUB_ORG). Required.
+  # Only repos in these orgs get tokens (GITHUB_ORG), comma-separated. Required.
   org: ""
   # Client ID of the login app used for the developer device flow (LOGIN_APP_CLIENT_ID). Required.
   loginClientId: ""
