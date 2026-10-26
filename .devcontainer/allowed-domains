@@ -1,5 +1,5 @@
 # Egress allowlist for init-firewall.sh: HTTPS only, each entry includes its subdomains.
-# The broker host is added at build from TOKEN_BROKER_URL.
+# init-firewall.sh adds the broker host from TOKEN_BROKER_URL in the container env.
 # Claude Code: API, login, OAuth refresh, auto-update (downloads.claude.ai).
 api.anthropic.com
 claude.ai

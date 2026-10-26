@@ -28,12 +28,9 @@ RUN base=https://raw.githubusercontent.com/pflege-de-labs/devcontainer-features/
 # Managed settings: applies to every Claude Code session here and cannot be overridden per user.
 COPY managed-settings.json /etc/claude-code/managed-settings.json
 
-ARG TOKEN_BROKER_URL
-ENV TOKEN_BROKER_URL=${TOKEN_BROKER_URL}
 # Root-owned copies, not links into the workspace: the agent can edit the workspace.
 COPY allowed-domains /etc/agent-firewall/domains
 COPY --chmod=755 init-firewall.sh /usr/local/bin/init-firewall.sh
-RUN echo "${TOKEN_BROKER_URL:?}" | sed -E 's#^[a-z]+://([^/:]+).*#\1#' >> /etc/agent-firewall/domains
 # The base image grants vscode all of sudo, which would let the agent flush the firewall.
 RUN grep -l 'NOPASSWD' /etc/sudoers.d/* | xargs rm \
  && echo 'vscode ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh ""' > /etc/sudoers.d/firewall \

@@ -9,10 +9,53 @@ and a volume for the login cache. This page covers the devcontainer of this repo
 
 [`.devcontainer/`](../.devcontainer) is a working setup for this repository; copy it for others.
 It fetches the scripts at a pinned devcontainer-features commit (`AGENT_TOKEN_REF` in the
-Dockerfile), sets the broker URL, the login app and the bot identity, installs Claude Code and the
-toolchain from `mise.toml`, and adds the SessionStart hook below as managed settings. On first attach the terminal shows a device code; log in there.
+Dockerfile), sets the bot identity, installs Claude Code and the toolchain from `mise.toml`, and
+adds the SessionStart hook below as managed settings. On first attach the terminal shows a device
+code; log in there.
 
 With Podman, set `"dev.containers.dockerPath": "podman"` in your VS Code settings.
+
+### Broker URL and login app
+
+The broker URL (internal route) and the login app client ID come from two GitHub Actions
+variables, not from the repository (ADR 8):
+
+| Variable | Container env | pflege-de value |
+|---|---|---|
+| `AGENT_TOKEN_BROKER_URL` | `TOKEN_BROKER_URL` | `https://token-broker.internal` |
+| `AGENT_LOGIN_CLIENT_ID` | `LOGIN_APP_CLIENT_ID` | `<login app client ID>` |
+
+github-ops sets them as org variables in every org (`variables` in `orgs/<org>/org.yaml`). A
+repository variable of the same name overrides the org value, e.g. for a test broker, in
+`orgs/<org>/repositories.yaml`:
+
+```yaml
+my-repo:
+  variables:
+    AGENT_TOKEN_BROKER_URL: https://token-broker.staging.example
+```
+
+They are not `TOKEN_BROKER_URL`: that org variable is the public `/token/actions` endpoint for
+workflows ([actions.md](actions.md)).
+
+Nothing in the container may read variables, so
+[`broker-env.sh`](../.devcontainer/broker-env.sh) runs on the host as `initializeCommand`. It needs
+`gh` (logged in, `repo` scope) and `jq`, reads both variables for the `origin` repo and writes
+`.devcontainer/.env` (gitignored), which `runArgs` passes with `--env-file`. To use it in
+another repository, copy the script and these keys:
+
+```jsonc
+{
+  "initializeCommand": ".devcontainer/broker-env.sh",
+  "runArgs": ["--env-file=${localWorkspaceFolder}/.devcontainer/.env"]
+}
+```
+
+Check what the container will get:
+
+```sh
+.devcontainer/broker-env.sh && cat .devcontainer/.env
+```
 
 Everything committed or pushed in the container goes out as `pflege-de-agent[bot]`, your own
 commits from the Source Control view included. Commit as yourself from the host.
@@ -36,7 +79,7 @@ Claude login and settings live in a volume and survive rebuilds.
 
 `init-firewall.sh` runs as root on every container start and limits outbound traffic to HTTPS on
 the domains in [`allowed-domains`](../.devcontainer/allowed-domains) and their subdomains, plus
-the broker. A local dnsmasq answers only those names and adds each resolved IP to the allowlist,
+the broker host. It reads `TOKEN_BROKER_URL` from PID 1's environment, which the agent cannot change. A local dnsmasq answers only those names and adds each resolved IP to the allowlist,
 so rotating CDN addresses keep working and DNS cannot carry data out. IPv6 is blocked.
 
 The agent cannot lift it:
