@@ -1,88 +1,16 @@
 # Agent tokens in containers
 
-A coding agent in a container gets agent tokens on demand, per repo, at the moment git, gh or the
-GitHub MCP server need one. Nothing is fetched at session start: agent tokens live 1h and cover
-one repo, while sessions run longer and touch several repos.
-
-| Script | Role |
-|---|---|
-| `agent-token` | Device-flow login (`--login`), login check (`--check`), token per repo with a cache |
-| `agent-token-git-credential` | git credential helper for `github.com` |
-| `agent-gh` | Wrapper installed as `gh`; sets `GH_TOKEN` for the target repo |
-| `agent-github-mcp` | Starts the local `github-mcp-server` with a token for the current repo (optional) |
-
-The developer logs in once per 8h with `agent-token --login` in an interactive terminal. All other
-calls set `AGENT_TOKEN_NONINTERACTIVE=1` and fail with `run: agent-token --login` instead of
-waiting for a device code nobody sees.
-
-## What the image needs
-
-- `bash`, `curl`, `jq`, `git`, `gh`; `github-mcp-server` only for the MCP server.
-- The four scripts in `/usr/local/bin`, with `agent-gh` installed **as `gh`**. It must come
-  before the real `gh` in `PATH`; the wrapper finds the real one itself.
-- Environment: `TOKEN_BROKER_URL` (internal broker URL) and `LOGIN_APP_CLIENT_ID`
-  (client ID of `pflege-de-agent-login`).
-- System git config:
-
-  ```sh
-  # The empty value drops inherited helpers (store, osxkeychain, gh) for github.com.
-  git config --system credential.https://github.com.helper ''
-  git config --system --add credential.https://github.com.helper '!agent-token-git-credential'
-  # Without the path git cannot say which repo it needs a token for.
-  git config --system credential.https://github.com.useHttpPath true
-  # Credential helpers only work over HTTPS.
-  git config --system url.https://github.com/.insteadOf git@github.com:
-  ```
-
-- A volume for `~/.cache/agent-token`, so the login survives container restarts. It holds the
-  developer's login token (8h) and agent tokens (1h); keep it per developer, never shared.
-
-Do not run `gh auth login` or `gh auth setup-git` in the container: the agent should act only as
-`pflege-de-agent`. Commands without one target repo (`gh api orgs/...`) get no agent token and fail
-unauthenticated, by design.
-
-The scripts are not published as a package. Copy them into the image build context at a pinned
-token-broker commit, e.g. `.devcontainer/agent-bin/`.
-
-## Plain container
-
-`Containerfile`:
-
-```dockerfile
-FROM docker.io/library/debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends bash ca-certificates curl git gh jq \
- && rm -rf /var/lib/apt/lists/*
-COPY agent-bin/agent-token agent-bin/agent-token-git-credential agent-bin/agent-github-mcp /usr/local/bin/
-COPY agent-bin/agent-gh /usr/local/bin/gh
-RUN git config --system credential.https://github.com.helper '' \
- && git config --system --add credential.https://github.com.helper '!agent-token-git-credential' \
- && git config --system credential.https://github.com.useHttpPath true \
- && git config --system url.https://github.com/.insteadOf git@github.com:
-ENV TOKEN_BROKER_URL=https://token-broker.internal \
-    LOGIN_APP_CLIENT_ID=<login app client ID>
-```
-
-Debian's `gh` lands in `/usr/bin`, after `/usr/local/bin` in `PATH`. Add Claude Code and your
-toolchain as usual.
-
-```sh
-podman build -t agent-dev .
-podman volume create agent-token-cache
-podman run -it --name agent-dev \
-  -v agent-token-cache:/root/.cache/agent-token \
-  -v "$PWD":/work -w /work agent-dev bash
-# inside, once per 8h:
-agent-token --login
-```
-
-From another terminal: `podman exec -it agent-dev agent-token --login`.
+A coding agent in a container gets agent tokens on demand, per repo, from the client scripts in
+[pflege-de-labs/devcontainer-features](https://github.com/pflege-de-labs/devcontainer-features)
+(`src/agent-token/`). Its README lists what an image needs: the scripts, the system git config
+and a volume for the login cache. This page covers the devcontainer of this repository.
 
 ## Devcontainer
 
 [`.devcontainer/`](../.devcontainer) is a working setup for this repository; copy it for others.
-It links the scripts from the checkout, sets the broker URL, the login app and the bot identity,
-installs Claude Code and the toolchain from `mise.toml`, and adds the SessionStart hook below as
-managed settings. On first attach the terminal shows a device code; log in there.
+It fetches the scripts at a pinned devcontainer-features commit (`AGENT_TOKEN_REF` in the
+Dockerfile), sets the broker URL, the login app and the bot identity, installs Claude Code and the
+toolchain from `mise.toml`, and adds the SessionStart hook below as managed settings. On first attach the terminal shows a device code; log in there.
 
 With Podman, set `"dev.containers.dockerPath": "podman"` in your VS Code settings.
 
