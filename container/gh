@@ -1,0 +1,3 @@
+#!/bin/sh
+# Reads the agent token per call: the host renews /run/agent/token during long sessions.
+GH_TOKEN="$(cat /run/agent/token)" exec /usr/bin/gh "$@"
