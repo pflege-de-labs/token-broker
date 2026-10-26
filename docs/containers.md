@@ -79,30 +79,27 @@ From another terminal: `podman exec -it agent-dev agent-token --login`.
 
 ## Devcontainer
 
-`.devcontainer/devcontainer.json`, next to a `Dockerfile` like the one above (without the `ENV`
-line):
+[`.devcontainer/`](../.devcontainer) is a working setup for this repository; copy it for others.
+It links the scripts from the checkout, sets the broker URL, the login app and the bot identity,
+installs Claude Code and the toolchain from `mise.toml`, and adds the SessionStart hook below as
+managed settings. On first attach the terminal shows a device code; log in there.
 
-```jsonc
-{
-  "build": { "dockerfile": "Dockerfile" },
-  "containerEnv": {
-    "TOKEN_BROKER_URL": "https://token-broker.internal",
-    "LOGIN_APP_CLIENT_ID": "<login app client ID>"
-  },
-  "mounts": [
-    // Per developer and per devcontainer; survives rebuilds.
-    "source=agent-token-cache-${devcontainerId},target=/home/vscode/.cache/agent-token,type=volume"
-  ],
-  "remoteUser": "vscode",
-  // A fresh volume is owned by root.
-  "postCreateCommand": "sudo chown vscode: /home/vscode/.cache/agent-token",
-  // Prompts in the terminal that opens on attach; skipped while the login is still valid.
-  "postAttachCommand": "agent-token --check 2>/dev/null || agent-token --login"
-}
-```
+Everything committed or pushed in the container goes out as `pflege-de-agent[bot]`, your own
+commits from the Source Control view included. Commit as yourself from the host.
 
-Adjust the home path to `remoteUser`. If the container user's home differs from the mount
-target, `agent-token` caches elsewhere and logs in on every rebuild.
+VS Code forwards your credentials into devcontainers; the setup closes what it can:
+
+- `GIT_AUTHOR_*`/`GIT_COMMITTER_*` override the host `~/.gitconfig` VS Code copies in.
+- `git.terminalAuthentication` and `github.gitAuthentication` are off, so VS Code does not
+  answer git with your GitHub login.
+- `agent-token-git-credential` answers `quit=1` when it has no token, so no later helper (VS
+  Code's forwarded one) answers for `github.com`.
+- Your SSH agent is still forwarded. `insteadOf` keeps GitHub on HTTPS, but the socket is there.
+  For full isolation use `agent-run` (see [local.md](local.md)) or the devcontainer CLI without
+  VS Code.
+
+A git worktree does not work as the workspace: its `.git` points outside the mount. Open a clone.
+`CLAUDE_CODE_OAUTH_TOKEN` is passed from the host if set; otherwise run `claude` and log in.
 
 ## Claude Code in the container
 

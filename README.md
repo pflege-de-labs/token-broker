@@ -90,6 +90,9 @@ Setting up the two GitHub Apps: [docs/github-apps.md](docs/github-apps.md).
 
 ## Develop
 
+Tool versions are in `mise.toml` (`mise install`). The [devcontainer](.devcontainer) runs Claude
+Code as the agent on this repository; see [docs/containers.md](docs/containers.md#devcontainer).
+
 ```sh
 go test ./...
 golangci-lint run
