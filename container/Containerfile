@@ -1,6 +1,6 @@
 # Agent sandbox: Claude Code with git and gh, authenticated only by the agent token that
 # agent-run mounts at /run/agent/token. See docs/local.md.
-FROM docker.io/library/node:22-bookworm-slim@sha256:ceb43e5c219139035fb742900629e4abed89fe0997f7c03250c499e1f2710c9e
+FROM docker.io/library/node:26-bookworm-slim@sha256:a4e3fd25c2bee93019b46bfa0eb40c73b285f773e0bd6b7a81a442152cd0a8fc
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl git jq gnupg \
