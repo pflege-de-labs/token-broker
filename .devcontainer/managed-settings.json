@@ -1,4 +1,5 @@
 {
+  "disableClaudeAiConnectors": true,
   "hooks": {
     "SessionStart": [
       { "hooks": [{ "type": "command", "command": "agent-token --check 2>&1 || true" }] }

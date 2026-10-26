@@ -1,0 +1,18 @@
+# Egress allowlist for init-firewall.sh: HTTPS only, each entry includes its subdomains.
+# The broker host is added at build from TOKEN_BROKER_URL.
+# Claude Code: API, login, OAuth refresh, auto-update (downloads.claude.ai).
+api.anthropic.com
+claude.ai
+claude.com
+# github.com, api.github.com; release assets for mise tools and raw files.
+github.com
+githubusercontent.com
+# Go modules for gopls and go builds.
+proxy.golang.org
+sum.golang.org
+# VS Code server and extensions installed inside the container.
+marketplace.visualstudio.com
+gallerycdn.vsassets.io
+vscode.blob.core.windows.net
+update.code.visualstudio.com
+vscode.download.prss.microsoft.com

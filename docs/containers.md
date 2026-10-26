@@ -84,6 +84,8 @@ It links the scripts from the checkout, sets the broker URL, the login app and t
 installs Claude Code and the toolchain from `mise.toml`, and adds the SessionStart hook below as
 managed settings. On first attach the terminal shows a device code; log in there.
 
+With Podman, set `"dev.containers.dockerPath": "podman"` in your VS Code settings.
+
 Everything committed or pushed in the container goes out as `pflege-de-agent[bot]`, your own
 commits from the Source Control view included. Commit as yourself from the host.
 
@@ -94,12 +96,35 @@ VS Code forwards your credentials into devcontainers; the setup closes what it c
   answer git with your GitHub login.
 - `agent-token-git-credential` answers `quit=1` when it has no token, so no later helper (VS
   Code's forwarded one) answers for `github.com`.
-- Your SSH agent is still forwarded. `insteadOf` keeps GitHub on HTTPS, but the socket is there.
-  For full isolation use `agent-run` (see [local.md](local.md)) or the devcontainer CLI without
-  VS Code.
+- Your SSH agent is still forwarded. The firewall blocks port 22, so it cannot reach GitHub, but
+  it can still sign. For full isolation use `agent-run` (see [local.md](local.md)) or the
+  devcontainer CLI without VS Code.
 
 A git worktree does not work as the workspace: its `.git` points outside the mount. Open a clone.
-`CLAUDE_CODE_OAUTH_TOKEN` is passed from the host if set; otherwise run `claude` and log in.
+`CLAUDE_CODE_OAUTH_TOKEN` is passed from the host if set; otherwise run `claude` and log in. The
+Claude login and settings live in a volume and survive rebuilds.
+
+### Egress firewall
+
+`init-firewall.sh` runs as root on every container start and limits outbound traffic to HTTPS on
+the domains in [`allowed-domains`](../.devcontainer/allowed-domains) and their subdomains, plus
+the broker. A local dnsmasq answers only those names and adds each resolved IP to the allowlist,
+so rotating CDN addresses keep working and DNS cannot carry data out. IPv6 is blocked.
+
+The agent cannot lift it:
+
+- `vscode` may only run `sudo /usr/local/bin/init-firewall.sh`, without arguments. The script and
+  the domain list are root-owned copies in the image, not files from the workspace.
+- `containerUser` is `root`. Podman hands `--cap-add` capabilities to a non-root container user
+  as ambient caps, so `vscode` could otherwise flush the rules itself. Docker does not.
+
+Network access beyond the list needs a change to `allowed-domains` and a rebuild. `mise install`
+runs before the firewall, so new tool versions also need a rebuild. Skipping permission prompts
+(`claude --dangerously-skip-permissions`) is reasonable only with the firewall active: the agent
+can still change anything in the workspace and reach every allowed domain.
+
+The firewall needs the `ip_set` and `xt_set` kernel modules. The Fedora CoreOS image of
+`podman machine` ships them and loads them on demand; no machine setup is needed.
 
 ## Claude Code in the container
 
@@ -121,7 +146,9 @@ The output lands in Claude's context; log in with `! agent-token --login`.
 ### GitHub MCP server
 
 The hosted GitHub MCP server and the claude.ai GitHub connector use your own identity, not the
-agent's. Disable them in the container and run `github-mcp-server` locally instead:
+agent's. The devcontainer disables claude.ai connectors via managed settings
+(`disableClaudeAiConnectors`), and the firewall blocks the hosted server. Run
+`github-mcp-server` locally instead:
 
 ```sh
 claude mcp add --scope user github -- agent-github-mcp --toolsets repos,issues,pull_requests

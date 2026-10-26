@@ -7,7 +7,7 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o 
  && curl -fsSL https://mise.jdx.dev/gpg-key.pub | gpg --dearmor -o /usr/share/keyrings/mise.gpg \
  && echo "deb [signed-by=/usr/share/keyrings/mise.gpg] https://mise.jdx.dev/deb stable main" > /etc/apt/sources.list.d/mise.list \
  && apt-get update \
- && apt-get install -y --no-install-recommends gh mise \
+ && apt-get install -y --no-install-recommends gh mise ipset dnsmasq-base \
  && rm -rf /var/lib/apt/lists/*
 
 # The empty value drops helpers inherited for github.com; useHttpPath tells the helper which repo.
@@ -20,9 +20,20 @@ RUN git config --system credential.https://github.com.helper '' \
 # Managed settings: applies to every Claude Code session here and cannot be overridden per user.
 COPY managed-settings.json /etc/claude-code/managed-settings.json
 
+ARG TOKEN_BROKER_URL
+ENV TOKEN_BROKER_URL=${TOKEN_BROKER_URL}
+# Root-owned copies, not links into the workspace: the agent can edit the workspace.
+COPY allowed-domains /etc/agent-firewall/domains
+COPY --chmod=755 init-firewall.sh /usr/local/bin/init-firewall.sh
+RUN echo "${TOKEN_BROKER_URL:?}" | sed -E 's#^[a-z]+://([^/:]+).*#\1#' >> /etc/agent-firewall/domains
+# The base image grants vscode all of sudo, which would let the agent flush the firewall.
+RUN grep -l 'NOPASSWD' /etc/sudoers.d/* | xargs rm \
+ && echo 'vscode ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh ""' > /etc/sudoers.d/firewall \
+ && chmod 440 /etc/sudoers.d/firewall
+
 USER vscode
 # Mount points exist before the volumes, so fresh volumes are owned by vscode, not root.
 RUN curl -fsSL https://claude.ai/install.sh | bash \
- && mkdir -p ~/.cache/agent-token ~/.local/share/mise
+ && mkdir -p ~/.cache/agent-token ~/.local/share/mise ~/.claude
 # Shims instead of shell activation, so non-interactive shells (Claude's, gopls) find the tools.
 ENV PATH=/home/vscode/.local/share/mise/shims:/home/vscode/.local/bin:$PATH
