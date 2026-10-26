@@ -1,13 +1,20 @@
 name: CI
 
+# Docs-only changes build nothing; no check is required on main, so skipped runs block no merge.
 on:
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
   # A branch with no open PR gets no image otherwise.
   workflow_dispatch:
 
-# A PR gets a fresh run per push; main pushes are not cancelled because each commit must produce its own image.
+# A PR gets a fresh run per push; main pushes are not cancelled because each code commit must produce its own image.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
