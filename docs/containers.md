@@ -60,6 +60,12 @@ Check what the container will get:
 Everything committed or pushed in the container goes out as `pflege-de-agent[bot]`, your own
 commits from the Source Control view included. Commit as yourself from the host.
 
+`git commit` here makes unsigned commits, which main's `required_signatures` rule rejects
+unless the PR is squash-merged. The agent therefore commits with `agent-commit` (from
+devcontainer-features), which creates the commit through the GitHub API, signed by GitHub, and
+pushes it in the same step. `/etc/claude-code/CLAUDE.md` tells Claude Code to use it. It cannot
+commit new executables or mode changes; those need `git commit` and a squash merge.
+
 VS Code forwards your credentials into devcontainers; the setup closes what it can:
 
 - `GIT_AUTHOR_*`/`GIT_COMMITTER_*` override the host `~/.gitconfig` VS Code copies in.
