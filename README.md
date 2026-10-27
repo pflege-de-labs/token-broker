@@ -28,13 +28,15 @@ token's `repository` and `sub` claims name it, and the agent app is installed th
 
 ## Use it locally
 
-Requirements: `curl`, `jq`, `gh`. You need the broker URL and the login app's client ID from
+Requirements: `curl`, `jq`, `gh`, and the client scripts from
+[pflege-de-labs/devcontainer-features](https://github.com/pflege-de-labs/devcontainer-features)
+(`src/agent-token/bin` on your `PATH`). You need the broker URL and the login app's client ID from
 the deployment (pflege-de: [cc-gitops `docs/token-broker.md`](https://github.com/pflege-de/cc-gitops/blob/main/docs/token-broker.md)).
 
 ```sh
 export TOKEN_BROKER_URL=https://<broker>   # internal route
 export LOGIN_APP_CLIENT_ID=<client ID>
-./agent-token my-org/my-repo              # prints a 1h agent token
+agent-token my-org/my-repo                # prints a 1h agent token
 ```
 
 The first run prints a code for <https://github.com/login/device>. The login token is cached

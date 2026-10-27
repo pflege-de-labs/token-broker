@@ -5,8 +5,10 @@
 set -euo pipefail
 
 conf=/etc/agent-firewall
+# PID 1 holds the env the container was created with; sudo drops vscode's, which the agent controls.
+broker=$(tr '\0' '\n' </proc/1/environ | sed -nE 's#^TOKEN_BROKER_URL=[a-z]+://([^/:]+).*#\1#p')
 # Root-owned, from the image: the agent must not choose what gets allowed.
-domains=$(grep -v -e '^#' -e '^$' $conf/domains | paste -sd/ -)
+domains=$({ grep -v -e '^#' -e '^$' $conf/domains; echo "${broker:?TOKEN_BROKER_URL missing from the container env}"; } | paste -sd/ -)
 
 # Re-runs find 127.0.0.1 in resolv.conf, so remember the container's own resolver.
 upstream=$(awk '/^nameserver/ && $2 !~ /:/ && $2 != "127.0.0.1" {print $2}' /etc/resolv.conf)

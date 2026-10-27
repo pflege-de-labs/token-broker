@@ -17,15 +17,22 @@ RUN git config --system credential.https://github.com.helper '' \
  && git config --system url.https://github.com/.insteadOf git@github.com: \
  && git config --system --add url.https://github.com/.insteadOf ssh://git@github.com/
 
+# Root-owned in /usr/local/bin, ahead of /usr/bin/gh: agent-gh is installed as gh and finds the real one.
+# shortcut: scripts fetched at a pinned commit; switch to the agent-token feature once it is published.
+ARG AGENT_TOKEN_REF=0e76b7f206db561f12c316fb073e6e92b02546d3
+RUN base=https://raw.githubusercontent.com/pflege-de-labs/devcontainer-features/$AGENT_TOKEN_REF/src/agent-token/bin \
+ && for f in agent-token agent-token-git-credential agent-github-mcp agent-commit; do curl -fsSL "$base/$f" -o /usr/local/bin/$f; done \
+ && curl -fsSL "$base/agent-gh" -o /usr/local/bin/gh \
+ && chmod 755 /usr/local/bin/agent-token /usr/local/bin/agent-token-git-credential /usr/local/bin/agent-github-mcp /usr/local/bin/agent-commit /usr/local/bin/gh
+
 # Managed settings: applies to every Claude Code session here and cannot be overridden per user.
 COPY managed-settings.json /etc/claude-code/managed-settings.json
+# Managed memory: tells every Claude Code session here to commit with agent-commit.
+COPY managed-CLAUDE.md /etc/claude-code/CLAUDE.md
 
-ARG TOKEN_BROKER_URL
-ENV TOKEN_BROKER_URL=${TOKEN_BROKER_URL}
 # Root-owned copies, not links into the workspace: the agent can edit the workspace.
 COPY allowed-domains /etc/agent-firewall/domains
 COPY --chmod=755 init-firewall.sh /usr/local/bin/init-firewall.sh
-RUN echo "${TOKEN_BROKER_URL:?}" | sed -E 's#^[a-z]+://([^/:]+).*#\1#' >> /etc/agent-firewall/domains
 # The base image grants vscode all of sudo, which would let the agent flush the firewall.
 RUN grep -l 'NOPASSWD' /etc/sudoers.d/* | xargs rm \
  && echo 'vscode ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh ""' > /etc/sudoers.d/firewall \

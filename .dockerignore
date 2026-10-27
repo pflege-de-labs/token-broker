@@ -6,5 +6,4 @@ charts
 scripts
 docs
 *.md
-agent-token
 /token-broker

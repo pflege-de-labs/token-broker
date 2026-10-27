@@ -3,7 +3,7 @@
 # Runs Claude Code in a container that holds only an agent token for one repo, renewed while
 # the session runs. Defaults to the repo of the current checkout. See docs/local.md.
 set -euo pipefail
-here=$(cd "$(dirname "$0")" && pwd)
+command -v agent-token >/dev/null || { echo "agent-run: agent-token not in PATH, see https://github.com/pflege-de-labs/devcontainer-features" >&2; exit 1; }
 : "${AGENT_APP_SLUG:?set AGENT_APP_SLUG to the agent GitHub App slug}"
 image=${AGENT_IMAGE:-localhost/agent-sandbox:latest}
 
@@ -19,7 +19,7 @@ fi
 base="${XDG_CACHE_HOME:-$HOME/.cache}/agent-token"
 mkdir -p "$base"
 run=$(mktemp -d "$base/run.XXXXXX")
-refresh() { "$here/agent-token" "$repo" >"$run/token.new" && mv "$run/token.new" "$run/token"; }
+refresh() { agent-token "$repo" >"$run/token.new" && mv "$run/token.new" "$run/token"; }
 refresh
 # Agent tokens live 1h; renew well before that.
 (while sleep 2700; do refresh || echo "agent-run: token refresh failed" >&2; done) &
