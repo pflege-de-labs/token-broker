@@ -8,8 +8,8 @@ and a volume for the login cache. This page covers the devcontainer of this repo
 ## Devcontainer
 
 [`.devcontainer/`](../.devcontainer) is a working setup for this repository; copy it for others.
-It fetches the scripts at a pinned devcontainer-features commit (`AGENT_TOKEN_REF` in the
-Dockerfile), sets the bot identity, installs Claude Code and the toolchain from `mise.toml`, and
+It installs the scripts with the `agent-token` Dev Container Feature (pinned by digest in
+`devcontainer.json`), sets the bot identity, installs Claude Code and the toolchain from `mise.toml`, and
 adds the SessionStart hook below as managed settings. On first attach the terminal shows a device
 code; log in there.
 

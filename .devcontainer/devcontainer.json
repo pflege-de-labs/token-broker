@@ -3,6 +3,10 @@
 {
   "name": "token-broker",
   "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    // agent-token 1.0.1: scripts, gh wrapper and git credential config, root-owned.
+    "ghcr.io/pflege-de-labs/devcontainer-features/agent-token@sha256:c62d5ee516830ad281a8ad4edfe74f7a2e92ab809ffd43aa8fe1928ff9e3c2a5": {}
+  },
   // Broker URL and login app from the Actions variables, read with the host's gh.
   "initializeCommand": ".devcontainer/broker-env.sh",
   // Capabilities for init-firewall.sh; vscode itself gets none.
