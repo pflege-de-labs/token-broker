@@ -20,7 +20,6 @@ and how Claude Code authenticates:
 
 ```sh
 export TOKEN_BROKER_URL=https://<broker>        # internal route
-export LOGIN_APP_CLIENT_ID=<login app client ID>
 export AGENT_APP_SLUG=<agent app slug>
 export CLAUDE_CODE_OAUTH_TOKEN=<from `claude setup-token`>   # or ANTHROPIC_API_KEY
 ```

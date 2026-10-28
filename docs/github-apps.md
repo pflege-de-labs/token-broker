@@ -41,7 +41,7 @@ The broker requests only the four permissions above per token, so granting more 
 - [ ] *Expire user authorization tokens* **on**: tokens live 8h.
 - [ ] *Callback URL:* none needed for device flow (if the form insists, use the broker URL).
 - [ ] *Request user authorization (OAuth) during installation* off; the app does not need to be installed.
-- [ ] Note the **Client ID** (`config.loginClientId`; developers also set it as `LOGIN_APP_CLIENT_ID`).
+- [ ] Note the **Client ID** (`config.loginClientId`; the broker serves it to clients at `/login-app`).
 - [ ] *Client secrets:* one secret generated. It goes only into the broker Secret as `login-client-secret`.
 
 ## Broker Secret

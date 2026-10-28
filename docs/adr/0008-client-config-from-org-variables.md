@@ -1,6 +1,6 @@
 # 8. Client config from org variables
 
-- Status: accepted
+- Status: accepted; client ID part superseded by ADR 11
 - Date: 2026-10-26
 
 ## Context

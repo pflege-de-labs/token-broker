@@ -7,7 +7,7 @@ Broker URL: http{{ if .Values.ingress.tls }}s{{ end }}://{{ (first .Values.ingre
 In-cluster URL: http://{{ include "token-broker.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
 {{- end }}
 
-Developers: export TOKEN_BROKER_URL=<broker URL> LOGIN_APP_CLIENT_ID={{ .Values.config.loginClientId }}
+Developers: export TOKEN_BROKER_URL=<broker URL>
 then run: agent-token <org>/<repo>
 
 Workflows: request an OIDC token with audience "{{ .Values.config.actionsOidc.audience }}".
