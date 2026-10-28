@@ -69,8 +69,8 @@ repository it is installed on must therefore **require a code owner review** and
 
 ## Deploy
 
-Container image `ghcr.io/pflege-de/token-broker` and Helm chart `charts/token-broker`, published
-to `oci://ghcr.io/pflege-de/charts`. Chart values are documented in
+Container image `ghcr.io/pflege-de-labs/token-broker` and Helm chart `charts/token-broker`, published
+to `oci://ghcr.io/pflege-de-labs/charts`. Chart values are documented in
 [`values.yaml`](charts/token-broker/values.yaml). The chart has no deployment-specific defaults;
 pflege-de's deployment lives in [cc-gitops `apps/token-broker/`](https://github.com/pflege-de/cc-gitops/tree/main/apps/token-broker).
 

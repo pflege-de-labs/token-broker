@@ -1,6 +1,6 @@
 # 7. Client scripts in devcontainer-features
 
-- Status: accepted
+- Status: accepted; the private-repository premise is superseded by ADR 12
 - Date: 2026-10-26
 
 ## Context

@@ -4,7 +4,7 @@
   "author": {
     "name": "pflege.de"
   },
-  "homepage": "https://github.com/pflege-de/token-broker/blob/main/docs/claude-plugin.md",
-  "repository": "https://github.com/pflege-de/token-broker",
+  "homepage": "https://github.com/pflege-de-labs/token-broker/blob/main/docs/claude-plugin.md",
+  "repository": "https://github.com/pflege-de-labs/token-broker",
   "keywords": ["github", "token-broker", "agent"]
 }

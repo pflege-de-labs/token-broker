@@ -8,8 +8,8 @@ fail() { echo "::error::$1"; exit 1; }
 default=$(helm template token-broker "$chart" --values "$chart/ci/default-values.yaml")
 
 # The image default must track this repository.
-echo "$default" | grep -q '"ghcr.io/pflege-de/token-broker:' \
-  || fail "image default does not point at ghcr.io/pflege-de/token-broker"
+echo "$default" | grep -q '"ghcr.io/pflege-de-labs/token-broker:' \
+  || fail "image default does not point at ghcr.io/pflege-de-labs/token-broker"
 
 # The pod holds the app key; it must not also hold a Kubernetes API token or a writable root.
 echo "$default" | grep -q "automountServiceAccountToken: false" \

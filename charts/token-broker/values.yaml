@@ -4,7 +4,7 @@
 replicaCount: 2
 
 image:
-  repository: ghcr.io/pflege-de/token-broker
+  repository: ghcr.io/pflege-de-labs/token-broker
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""

@@ -20,10 +20,12 @@ With Podman, set `"dev.containers.dockerPath": "podman"` in your VS Code setting
 The broker URL (internal route) and the login app client ID come from two GitHub Actions
 variables, not from the repository (ADR 8):
 
-| Variable | Container env | pflege-de value |
-|---|---|---|
-| `AGENT_TOKEN_BROKER_URL` | `TOKEN_BROKER_URL` | `https://token-broker.internal` |
-| `AGENT_LOGIN_CLIENT_ID` | `LOGIN_APP_CLIENT_ID` | `<login app client ID>` |
+| Variable | Container env |
+|---|---|
+| `AGENT_TOKEN_BROKER_URL` | `TOKEN_BROKER_URL` |
+| `AGENT_LOGIN_CLIENT_ID` | `LOGIN_APP_CLIENT_ID` |
+
+pflege-de values: [cc-gitops `docs/token-broker.md`](https://github.com/pflege-de/cc-gitops/blob/main/docs/token-broker.md).
 
 github-ops sets them as org variables in every org (`variables` in `orgs/<org>/org.yaml`). A
 repository variable of the same name overrides the org value, e.g. for a test broker, in
