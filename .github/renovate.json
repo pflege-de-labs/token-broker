@@ -26,7 +26,7 @@
   "timezone": "Europe/Berlin",
   "assignAutomerge": true,
   "ignoreDeps": [
-    "github.com/pflege-de/token-broker"
+    "github.com/pflege-de-labs/token-broker"
   ],
   "packageRules": [
     {

@@ -7,7 +7,7 @@ repository the agent app is installed on.
 ## Install
 
 ```sh
-claude plugin marketplace add pflege-de/token-broker
+claude plugin marketplace add pflege-de-labs/token-broker
 claude plugin install agent-token@pflege-de-token-broker
 ```
 

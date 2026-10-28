@@ -2,14 +2,14 @@ apiVersion: v2
 name: token-broker
 description: Exchanges developer logins and GitHub Actions OIDC tokens for short-lived GitHub App tokens for coding agents
 type: application
-home: https://github.com/pflege-de/token-broker
+home: https://github.com/pflege-de-labs/token-broker
 sources:
-  - https://github.com/pflege-de/token-broker
+  - https://github.com/pflege-de-labs/token-broker
 keywords:
   - github-app
   - oidc
   - agents
 # The chart is versioned independently of the application; appVersion tracks the
 # token-broker release whose image the defaults point at.
-version: 0.3.0
-appVersion: "0.3.0"
+version: 0.4.0
+appVersion: "0.4.0"

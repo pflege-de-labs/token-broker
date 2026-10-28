@@ -1,4 +1,4 @@
-module github.com/pflege-de/token-broker
+module github.com/pflege-de-labs/token-broker
 
 go 1.27.3
 
