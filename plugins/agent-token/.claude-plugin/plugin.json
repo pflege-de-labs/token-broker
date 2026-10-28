@@ -1,6 +1,6 @@
 {
   "name": "agent-token",
-  "description": "Detects repositories that use token-broker agent tokens and tells Claude to commit and call GitHub as the agent app",
+  "description": "Detects repositories that use token-broker agent tokens, tells Claude to commit and call GitHub as the agent app and blocks git commit, git push and gh with the user's credentials",
   "author": {
     "name": "pflege.de"
   },

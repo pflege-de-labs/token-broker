@@ -36,6 +36,13 @@ jobs:
       chart: charts/token-broker
       assert-command: scripts/check-chart-render.sh charts/token-broker
 
+  # The Claude Code plugin's guard decides what the agent may run; its cases must hold.
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: plugins/agent-token/test.sh
+
   # No image ever exists for a commit whose checks failed.
   image:
     needs: checks
