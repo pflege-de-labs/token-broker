@@ -1,0 +1,16 @@
+{
+  "name": "pflege-de-token-broker",
+  "description": "Claude Code plugins for token-broker agent tokens",
+  "owner": {
+    "name": "pflege.de"
+  },
+  "plugins": [
+    {
+      "name": "agent-token",
+      "source": "./plugins/agent-token",
+      "description": "Tells Claude to work as the agent app in repositories with the topic agent-token-broker",
+      "category": "development",
+      "tags": ["github", "token-broker", "agent"]
+    }
+  ]
+}
