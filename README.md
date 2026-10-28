@@ -48,6 +48,9 @@ token during long sessions and keeps your own keys and `gh` login out of the con
 Without a container, deny the agent read access to `~/.ssh`, `~/.config/gh` and
 `~/.cache/agent-token`.
 
+Running Claude Code on the host instead? The Claude Code plugin `agent-token` detects repos that
+use agent tokens and tells Claude to commit and call GitHub with them: [docs/claude-plugin.md](docs/claude-plugin.md).
+
 Commits made with local git are not signed. Merge agent PRs with **squash**, so the commit on
 a branch that requires signatures is created and signed by GitHub.
 
