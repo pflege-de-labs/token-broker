@@ -12,7 +12,7 @@ claude plugin install agent-token@pflege-de-token-broker
 ```
 
 Needs `gh` (logged in) and, for the actual work, the client scripts on `PATH` plus
-`TOKEN_BROKER_URL` and `LOGIN_APP_CLIENT_ID` (see the [README](../README.md#use-it-locally)).
+`TOKEN_BROKER_URL` (see the [README](../README.md#use-it-locally)).
 
 ## What it does
 

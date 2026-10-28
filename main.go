@@ -122,6 +122,7 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /token", b.handleToken)
 	mux.HandleFunc("POST /token/actions", b.handleActionsToken)
+	mux.HandleFunc("GET /login-app", b.handleLoginApp)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	mux.HandleFunc("GET /readyz", b.handleReady)
 	mux.Handle("GET /metrics", promhttp.Handler())
@@ -166,6 +167,12 @@ func (b *broker) handleActionsToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	b.handleToken(w, r)
+}
+
+// handleLoginApp serves the login app's client ID, so clients need only the broker URL.
+func (b *broker) handleLoginApp(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"client_id": b.cfg.loginID})
 }
 
 func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {

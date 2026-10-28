@@ -30,12 +30,11 @@ token's `repository` and `sub` claims name it, and the agent app is installed th
 
 Requirements: `curl`, `jq`, `gh`, and the client scripts from
 [pflege-de-labs/devcontainer-features](https://github.com/pflege-de-labs/devcontainer-features)
-(`src/agent-token/bin` on your `PATH`). You need the broker URL and the login app's client ID from
-the deployment (pflege-de: [cc-gitops `docs/token-broker.md`](https://github.com/pflege-de/cc-gitops/blob/main/docs/token-broker.md)).
+(`src/agent-token/bin` on your `PATH`). You need the broker URL from the deployment; the broker
+serves the login app's client ID (`GET /login-app`) (pflege-de: [cc-gitops `docs/token-broker.md`](https://github.com/pflege-de/cc-gitops/blob/main/docs/token-broker.md)).
 
 ```sh
 export TOKEN_BROKER_URL=https://<broker>   # internal route
-export LOGIN_APP_CLIENT_ID=<client ID>
 agent-token my-org/my-repo                # prints a 1h agent token
 ```
 
@@ -88,8 +87,8 @@ only; GitHub never calls it. Run it behind TLS.
 | `ACTIONS_ALLOWED_REFS`, `ACTIONS_ALLOWED_WORKFLOWS` | optional allowlists, comma-separated globs |
 | `LISTEN_ADDR`, `GITHUB_API_URL` | defaults `:8080`, `https://api.github.com` |
 
-Endpoints besides `/token` and `/token/actions`: `/healthz` (liveness), `/readyz` (GitHub
-accepts the app key), `/metrics` (Prometheus).
+Endpoints besides `/token` and `/token/actions`: `/login-app` (`{"client_id": ...}` for the
+device flow), `/healthz` (liveness), `/readyz` (GitHub accepts the app key), `/metrics` (Prometheus).
 
 Setting up the two GitHub Apps: [docs/github-apps.md](docs/github-apps.md).
 

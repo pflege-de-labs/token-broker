@@ -192,6 +192,16 @@ func TestHandleActionsToken(t *testing.T) {
 	}
 }
 
+// Clients (agent-token) read client_id from here; the name is a contract with devcontainer-features.
+func TestHandleLoginApp(t *testing.T) {
+	b, _ := newTestBroker(t)
+	rec := httptest.NewRecorder()
+	b.handleLoginApp(rec, httptest.NewRequest(http.MethodGet, "/login-app", nil))
+	if got := strings.TrimSpace(rec.Body.String()); got != `{"client_id":"login-client"}` {
+		t.Fatalf("body = %s", got)
+	}
+}
+
 func TestMatchesAny(t *testing.T) {
 	tests := []struct {
 		patterns []string
