@@ -34,7 +34,7 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
-// Agent tokens never get more than this, regardless of what the app is granted.
+// Default agent token permissions; AGENT_PERMISSIONS replaces them. Tokens never exceed these, whatever the app is granted.
 var agentPermissions = map[string]string{
 	"contents":      "write",
 	"pull_requests": "write",
@@ -48,6 +48,8 @@ var version = "dev"
 // Guards the path segments we splice into GitHub API URLs.
 var namePattern = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 
+var permissionName = regexp.MustCompile(`^[a-z_]+$`)
+
 type config struct {
 	appID       string
 	key         *rsa.PrivateKey
@@ -58,6 +60,7 @@ type config struct {
 	// Optional Actions allowlists (globs, `*` spans `/`); empty allows any ref or workflow.
 	allowedRefs      []string
 	allowedWorkflows []string
+	permissions      map[string]string // agent token permissions; nil uses agentPermissions
 }
 
 type broker struct {
@@ -92,6 +95,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	perms, err := parsePermissions(os.Getenv("AGENT_PERMISSIONS"))
+	if err != nil {
+		return err
+	}
 	cfg := config{
 		appID:            os.Getenv("GITHUB_APP_ID"),
 		key:              key,
@@ -101,6 +108,7 @@ func run() error {
 		loginSecret:      os.Getenv("LOGIN_APP_CLIENT_SECRET"),
 		allowedRefs:      splitList(os.Getenv("ACTIONS_ALLOWED_REFS")),
 		allowedWorkflows: splitList(os.Getenv("ACTIONS_ALLOWED_WORKFLOWS")),
+		permissions:      perms,
 	}
 	if cfg.appID == "" || len(cfg.orgs) == 0 || cfg.loginID == "" || cfg.loginSecret == "" {
 		return errors.New("GITHUB_APP_ID, GITHUB_ORG, LOGIN_APP_CLIENT_ID and LOGIN_APP_CLIENT_SECRET are required")
@@ -145,6 +153,10 @@ func run() error {
 }
 
 func newBroker(cfg config, actions *oidc.IDTokenVerifier, meter metric.Meter) (*broker, error) {
+	// A nil map would send "permissions": null, which GitHub answers with every permission of the app.
+	if len(cfg.permissions) == 0 {
+		cfg.permissions = agentPermissions
+	}
 	requests, err := meter.Int64Counter("broker.token.requests", metric.WithDescription("Token requests by outcome"))
 	if err != nil {
 		return nil, err
@@ -300,7 +312,7 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tok, err := b.installationToken(ctx, jwt, inst.ID, name, agentPermissions)
+	tok, err := b.installationToken(ctx, jwt, inst.ID, name, b.cfg.permissions)
 	if err != nil {
 		fail(http.StatusBadGateway, "error", "minting installation token failed", "err", err)
 		return
@@ -481,6 +493,22 @@ func splitList(s string) []string {
 		}
 	}
 	return out
+}
+
+// parsePermissions reads "name:level,..." (level read or write); empty returns nil.
+func parsePermissions(s string) (map[string]string, error) {
+	var perms map[string]string
+	for _, entry := range splitList(s) {
+		name, level, _ := strings.Cut(entry, ":")
+		if !permissionName.MatchString(name) || (level != "read" && level != "write") {
+			return nil, fmt.Errorf("AGENT_PERMISSIONS: %q is not name:read or name:write", entry)
+		}
+		if perms == nil {
+			perms = map[string]string{}
+		}
+		perms[name] = level
+	}
+	return perms, nil
 }
 
 func envOr(name, fallback string) string {

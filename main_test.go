@@ -264,6 +264,33 @@ func TestSplitList(t *testing.T) {
 	}
 }
 
+func TestConfiguredPermissions(t *testing.T) {
+	b, minted := newTestBroker(t)
+	b.cfg.permissions = map[string]string{"contents": "write", "actions": "write"}
+	req := httptest.NewRequest(http.MethodPost, "/token", strings.NewReader(`{"repo":"acme/app"}`))
+	req.Header.Set("Authorization", "Bearer ghu_dev")
+	rec := httptest.NewRecorder()
+	b.handleToken(rec, req)
+	if perms, _ := (*minted)["permissions"].(map[string]any); rec.Code != http.StatusOK || len(perms) != 2 || perms["actions"] != "write" {
+		t.Errorf("status %d, permissions %v", rec.Code, perms)
+	}
+}
+
+func TestParsePermissions(t *testing.T) {
+	got, err := parsePermissions(" contents:write, actions:read ,")
+	if err != nil || len(got) != 2 || got["contents"] != "write" || got["actions"] != "read" {
+		t.Errorf("parsePermissions = %v, %v", got, err)
+	}
+	if got, err := parsePermissions(""); got != nil || err != nil {
+		t.Errorf("empty: parsePermissions = %v, %v", got, err)
+	}
+	for _, bad := range []string{"contents", "contents:admin", "Contents:write", ":write"} {
+		if _, err := parsePermissions(bad); err == nil {
+			t.Errorf("parsePermissions(%q) accepted", bad)
+		}
+	}
+}
+
 func TestAllowedOrg(t *testing.T) {
 	c := config{orgs: []string{"acme", "beta"}}
 	for owner, want := range map[string]bool{"acme": true, "beta": true, "ACME": true, "Beta": true, "evil": false, "": false} {

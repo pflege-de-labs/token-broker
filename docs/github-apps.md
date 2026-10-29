@@ -30,7 +30,7 @@ The broker needs two org-owned GitHub Apps in `pflege-de`. Settings live under
 - [ ] The app is **not** a bypass actor in any ruleset (repo or org). That includes `protect-default-branch` from github-ops.
 - [ ] Note the **App ID** (`config.appId`).
 
-The broker requests only the four permissions above per token, so granting more to the app widens nothing for agents. Still, keep the app minimal: the private key alone can mint tokens with everything the app has.
+The broker requests only the four permissions above per token, so granting more to the app widens nothing for agents. `AGENT_PERMISSIONS` (chart: `config.agentPermissions`) changes that set (ADR 13); every installation must have accepted each permission in it, or GitHub refuses the token. Keep the app minimal: the private key alone can mint tokens with everything the app has.
 
 ## Login app
 

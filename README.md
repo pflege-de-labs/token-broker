@@ -85,6 +85,7 @@ only; GitHub never calls it. Run it behind TLS.
 | `ACTIONS_OIDC_AUDIENCE` | default `token-broker` |
 | `ACTIONS_OIDC_ISSUER` | default `https://token.actions.githubusercontent.com` |
 | `ACTIONS_ALLOWED_REFS`, `ACTIONS_ALLOWED_WORKFLOWS` | optional allowlists, comma-separated globs |
+| `AGENT_PERMISSIONS` | agent token permissions as `name:level,...`; default `contents:write,pull_requests:write,issues:write,metadata:read` |
 | `LISTEN_ADDR`, `GITHUB_API_URL` | defaults `:8080`, `https://api.github.com` |
 
 Endpoints besides `/token` and `/token/actions`: `/login-app` (`{"client_id": ...}` for the
