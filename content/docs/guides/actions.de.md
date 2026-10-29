@@ -8,7 +8,7 @@ welche Runner ihn nutzen können.
 
 | Runner | Broker-Endpunkt | Chart |
 | --- | --- | --- |
-| GitHub-gehostet | öffentlich `POST <public URL>`, weitergeleitet an `/token/actions` | `actionsRoute` |
+| GitHub-gehostet | öffentlich `POST <public base URL>/token/actions` | `actionsRoute` |
 | selbst gehostet mit Zugang zum internen Netz | intern `POST <internal URL>/token/actions` (oder `/token`) | `httpRoute` oder der Service |
 
 `/token/actions` akzeptiert Actions-OIDC-Tokens und sonst nichts, deshalb kann `actionsRoute`
@@ -17,7 +17,7 @@ Metriken bleiben intern.
 
 ## Workflow {#workflow}
 
-Workflows wählen Runner und URL aus Actions-Variablen, sodass ein Workflow beide Setups bedient:
+Workflows wählen Runner und Broker-URL aus Actions-Variablen, sodass ein Workflow beide Setups bedient:
 
 ```yaml
 jobs:
@@ -29,11 +29,11 @@ jobs:
     steps:
       - id: agent
         env:
-          TOKEN_BROKER_URL: ${{ vars.TOKEN_BROKER_URL }}
+          BROKER: ${{ vars.AGENT_TOKEN_BROKER_ACTIONS_URL }}
         run: |
           oidc=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=token-broker" | jq -r .value)
-          token=$(curl -fsS "$TOKEN_BROKER_URL" -H "Authorization: Bearer $oidc" \
+          token=$(curl -fsS "$BROKER/token/actions" -H "Authorization: Bearer $oidc" \
             -d "{\"repo\":\"$GITHUB_REPOSITORY\"}" | jq -r .token)
           echo "::add-mask::$token"
           echo "token=$token" >> "$GITHUB_OUTPUT"
@@ -42,9 +42,12 @@ jobs:
           github_token: ${{ steps.agent.outputs.token }}
 ```
 
-Die Audience muss zu `ACTIONS_OIDC_AUDIENCE` passen (Standard `token-broker`). `TOKEN_BROKER_URL`
-ist hier die Actions-Variable der Organisation mit der öffentlichen `/token/actions`-URL. Sie ist
-nicht die gleichnamige Container-Variable; siehe [Dev Container](../../getting-started/devcontainer/).
+Die Audience muss zu `ACTIONS_OIDC_AUDIENCE` passen (Standard `token-broker`).
+`AGENT_TOKEN_BROKER_ACTIONS_URL` ist die Actions-Variable der Organisation mit der Basis-URL des
+Brokers für Workflows: die öffentliche Route für GitHub-gehostete Runner oder die interne URL für
+selbst gehostete Runner. Der Workflow hängt `/token/actions` an. `AGENT_TOKEN_BROKER_URL` ist die
+interne URL für Entwicklerrechner ([Dev Container](../../getting-started/devcontainer/)); deren
+Anmeldungen bedient die öffentliche Route nicht.
 
 Das Token gilt nur für das Repository, in dem der Workflow läuft: Der Broker verlangt, dass der
 Claim `repository` und `sub` beide das angeforderte Repository nennen. `sub` ist entweder die

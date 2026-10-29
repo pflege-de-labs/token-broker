@@ -8,7 +8,7 @@ which runners can use it.
 
 | Runner | Broker endpoint | Chart |
 | --- | --- | --- |
-| GitHub-hosted | public `POST <public URL>` forwarded to `/token/actions` | `actionsRoute` |
+| GitHub-hosted | public `POST <public base URL>/token/actions` | `actionsRoute` |
 | self-hosted with internal network access | internal `POST <internal URL>/token/actions` (or `/token`) | `httpRoute` or the Service |
 
 `/token/actions` accepts Actions OIDC tokens and nothing else, so `actionsRoute` can be public: it
@@ -16,7 +16,7 @@ forwards exactly one path, `POST` only, and developer logins, probes and metrics
 
 ## Workflow
 
-Workflows pick runner and URL from Actions variables, so one workflow serves both setups:
+Workflows pick runner and broker URL from Actions variables, so one workflow serves both setups:
 
 ```yaml
 jobs:
@@ -28,11 +28,11 @@ jobs:
     steps:
       - id: agent
         env:
-          TOKEN_BROKER_URL: ${{ vars.TOKEN_BROKER_URL }}
+          BROKER: ${{ vars.AGENT_TOKEN_BROKER_ACTIONS_URL }}
         run: |
           oidc=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=token-broker" | jq -r .value)
-          token=$(curl -fsS "$TOKEN_BROKER_URL" -H "Authorization: Bearer $oidc" \
+          token=$(curl -fsS "$BROKER/token/actions" -H "Authorization: Bearer $oidc" \
             -d "{\"repo\":\"$GITHUB_REPOSITORY\"}" | jq -r .token)
           echo "::add-mask::$token"
           echo "token=$token" >> "$GITHUB_OUTPUT"
@@ -41,10 +41,12 @@ jobs:
           github_token: ${{ steps.agent.outputs.token }}
 ```
 
-The audience must match `ACTIONS_OIDC_AUDIENCE` (default `token-broker`). Here
-`TOKEN_BROKER_URL` is the organization's Actions variable holding the public `/token/actions`
-URL. It is not the container variable of the same name; see
-[Dev Container](../../getting-started/devcontainer/).
+The audience must match `ACTIONS_OIDC_AUDIENCE` (default `token-broker`).
+`AGENT_TOKEN_BROKER_ACTIONS_URL` is the organization's Actions variable with the broker's base URL
+for workflows: the public route for GitHub-hosted runners, or the internal URL for self-hosted
+runners. The workflow appends `/token/actions`. `AGENT_TOKEN_BROKER_URL` is the internal URL for
+developer machines ([Dev Container](../../getting-started/devcontainer/)); the public route does
+not serve their logins.
 
 The token covers only the repository the workflow runs in: the broker requires both the
 `repository` claim and `sub` to name the requested repository. `sub` is either the classic

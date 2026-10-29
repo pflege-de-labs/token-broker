@@ -15,9 +15,8 @@ contribution rules live on `main`.
 
 * A user-visible change on `main` gets a pull request here, against `pages`.
 * A fix that also applies to a released version is cherry-picked onto its `pages-vX.Y`.
-* Merge the docs for everything in a release before it is tagged. `main`'s release workflow does
-  not create `pages-vX.Y` yet: after `vX.Y.0` is published, create the branch by hand from
-  `pages` and run `docs-deploy` on it with `gh workflow run`.
+* Merge the docs for everything in a release before it is tagged: a stable `vX.Y.0` tag makes
+  `main`'s release workflow create `pages-vX.Y` from `pages` and deploy it.
 * A pull request is previewed at `/token-broker/pr-preview/pr-N/` and the bot comments the link.
 
 ## Layout
