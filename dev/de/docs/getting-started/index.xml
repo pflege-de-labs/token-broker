@@ -1,0 +1,413 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Token Broker – Erste Schritte</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/</link><description>Recent content in Erste Schritte on Token Broker</description><generator>Hugo -- gohugo.io</generator><language>de-DE</language><atom:link href="https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/index.xml" rel="self" type="application/rss+xml"/><item><title>Claude-Code-Plugin</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/claude-code/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/claude-code/</guid><description>
+&lt;p&gt;Installieren Sie das Plugin &lt;code&gt;agent-token&lt;/code&gt;, damit Claude Code auf Ihrem Rechner als Agent-App
+committet und GitHub aufruft statt als Sie.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="before-you-start"&gt;Bevor Sie beginnen&lt;span class="hx:absolute hx:-mt-20" id="before-you-start"&gt;&lt;/span&gt;
+&lt;a href="#before-you-start" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;jq&lt;/code&gt;, &lt;code&gt;gh&lt;/code&gt; (angemeldet), &lt;code&gt;curl&lt;/code&gt; und &lt;code&gt;git&lt;/code&gt; auf dem Rechner.&lt;/li&gt;
+&lt;li&gt;Die Agent-App ist auf Ihrem Repository installiert, und das Repository trägt das Topic
+&lt;code&gt;agent-token-broker&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Die URL des Brokers. Das Plugin sucht sie in dieser Reihenfolge: die Umgebungsvariable
+&lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt;, die Plugin-Option &lt;code&gt;broker_url&lt;/code&gt;, die Actions-Variable
+&lt;code&gt;AGENT_TOKEN_BROKER_URL&lt;/code&gt; der Organisation des Repositorys, gelesen mit Ihrem &lt;code&gt;gh&lt;/code&gt;.
+Repository-Variablen werden ignoriert, damit Repository-Admins Ihre Anmeldung nicht an einen
+anderen Server umleiten können. Nur &lt;code&gt;https://&lt;/code&gt;-URLs werden akzeptiert.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 data-hextra-search-id="install"&gt;Installieren&lt;span class="hx:absolute hx:-mt-20" id="install"&gt;&lt;/span&gt;
+&lt;a href="#install" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;claude plugin marketplace add pflege-de-labs/token-broker
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;claude plugin install agent-token@pflege-de-token-broker&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Um die Broker-URL bei der Installation zu setzen, ergänzen Sie &lt;code&gt;--config broker_url=https://&amp;lt;broker&amp;gt;&lt;/code&gt;.
+Sie können sie auch später in Claude Code mit &lt;code&gt;/config&lt;/code&gt; setzen.&lt;/p&gt;
+&lt;p&gt;Das Plugin bringt die Client-Skripte mit: Sein Verzeichnis &lt;code&gt;bin/&lt;/code&gt; liegt im PATH des Bash-Tools von
+Claude. Ihr eigener &lt;code&gt;PATH&lt;/code&gt; hat Vorrang, eine Installation per Homebrew oder Skript gewinnt also.
+Das Plugin folgt &lt;code&gt;main&lt;/code&gt;, während Homebrew, das Installationsskript und die Container ein
+festgelegtes Release installieren. Auto-Update für Marketplaces ist standardmäßig aus;
+aktualisieren Sie mit &lt;code&gt;claude plugin update agent-token@pflege-de-token-broker&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="log-in"&gt;Anmelden&lt;span class="hx:absolute hx:-mt-20" id="log-in"&gt;&lt;/span&gt;
+&lt;a href="#log-in" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Einmal alle 8 Stunden, im Claude-Code-Prompt:&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;! agent-token --login&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Beim ersten Login erscheint ein Code für &lt;a href="https://github.com/login/device" target="_blank" rel="noopener"&gt;https://github.com/login/device&lt;/a&gt;. Das Login-Token liegt
+in &lt;code&gt;~/.cache/agent-token/login.json&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="what-happens-in-a-session"&gt;Was in einer Sitzung passiert&lt;span class="hx:absolute hx:-mt-20" id="what-happens-in-a-session"&gt;&lt;/span&gt;
+&lt;a href="#what-happens-in-a-session" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Ein &lt;code&gt;SessionStart&lt;/code&gt;-Hook prüft, ob das Repository das Topic &lt;code&gt;agent-token-broker&lt;/code&gt; trägt. Wenn ja,
+wird Claude angewiesen, mit Agent-Tokens zu committen und GitHub aufzurufen, und der Hook ergänzt
+das Ergebnis von &lt;code&gt;agent-token --check&lt;/code&gt;. In allen anderen Verzeichnissen bleibt das Plugin still.&lt;/p&gt;
+&lt;p&gt;In einer solchen Sitzung blockiert ein &lt;code&gt;PreToolUse&lt;/code&gt;-Hook Bash-Befehle mit &lt;code&gt;git commit&lt;/code&gt; oder
+&lt;code&gt;git push&lt;/code&gt; sowie ein bloßes &lt;code&gt;gh&lt;/code&gt;, wo &lt;code&gt;agent-gh&lt;/code&gt; existiert. Claude nutzt stattdessen
+&lt;a href="../../guides/signed-commits/"&gt;&lt;code&gt;agent-commit&lt;/code&gt;&lt;/a&gt; und &lt;code&gt;agent-gh&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="hx:overflow-x-auto hx:mt-6 hx:flex hx:rounded-lg hx:border hx:py-2 hx:ltr:pr-4 hx:rtl:pl-4 hx:contrast-more:border-current hx:contrast-more:dark:border-current hx:border-amber-200 hx:bg-amber-100 hx:text-amber-900 hx:dark:border-amber-200/30 hx:dark:bg-amber-900/30 hx:dark:text-amber-200"&gt;
+&lt;div class="hx:ltr:pl-3 hx:ltr:pr-2 hx:rtl:pr-3 hx:rtl:pl-2"&gt;&lt;svg height=1.2em class="hx:inline-block hx:align-middle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/&gt;&lt;/svg&gt;&lt;/div&gt;
+&lt;div class="hx:w-full hx:min-w-0 hx:leading-7"&gt;
+&lt;div class="hx:mt-6 hx:leading-7 hx:first:mt-0"&gt;Das Plugin ist eine Leitplanke, keine Sandbox. Der Hook vergleicht Befehlstext, daher kommen
+&lt;code&gt;env git push&lt;/code&gt; oder ein Skript, das pusht, mit Ihren Zugangsdaten durch. Für Isolation nutzen Sie
+den &lt;a href="../container/"&gt;Container&lt;/a&gt; oder den &lt;a href="../devcontainer/"&gt;Dev Container&lt;/a&gt;. Siehe das
+&lt;a href="../../concepts/security-model/"&gt;Sicherheitsmodell&lt;/a&gt;.&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 data-hextra-search-id="next-steps"&gt;Nächste Schritte&lt;span class="hx:absolute hx:-mt-20" id="next-steps"&gt;&lt;/span&gt;
+&lt;a href="#next-steps" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a href="../../guides/signed-commits/"&gt;Agent-Commits signieren&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="../../reference/client-cli/"&gt;Client-Befehle&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description></item><item><title>Homebrew</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/homebrew/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/homebrew/</guid><description>
+&lt;p&gt;Installieren Sie die Client-Skripte unter macOS oder Linux mit Homebrew. Die Formel hängt von &lt;code&gt;jq&lt;/code&gt;
+und &lt;code&gt;gh&lt;/code&gt; ab.&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;brew tap pflege-de-labs/token-broker https://github.com/pflege-de-labs/token-broker
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;brew install agent-token&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Setzen Sie die Broker-URL und fordern Sie ein Token an:&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nb"&gt;export&lt;/span&gt; &lt;span class="nv"&gt;TOKEN_BROKER_URL&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;https://&amp;lt;broker&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token my-org/my-repo &lt;span class="c1"&gt;# prints a 1h agent token&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Beim ersten Aufruf erscheint ein Code für &lt;a href="https://github.com/login/device" target="_blank" rel="noopener"&gt;https://github.com/login/device&lt;/a&gt;. Das Login-Token wird 8
+Stunden in &lt;code&gt;~/.cache/agent-token/login.json&lt;/code&gt; (Modus 600) zwischengespeichert, spätere Aufrufe
+brauchen keinen Browser.&lt;/p&gt;
+&lt;p&gt;Homebrew installiert ein festgelegtes Release. Wenn Sie die Skripte aus Claude Code nutzen wollen,
+ohne die Installation selbst zu pflegen, verwenden Sie das &lt;a href="../claude-code/"&gt;Plugin&lt;/a&gt;.&lt;/p&gt;
+&lt;div class="hx:overflow-x-auto hx:mt-6 hx:flex hx:rounded-lg hx:border hx:py-2 hx:ltr:pr-4 hx:rtl:pl-4 hx:contrast-more:border-current hx:contrast-more:dark:border-current hx:border-blue-200 hx:bg-blue-100 hx:text-blue-900 hx:dark:border-blue-200/30 hx:dark:bg-blue-900/30 hx:dark:text-blue-200"&gt;
+&lt;div class="hx:ltr:pl-3 hx:ltr:pr-2 hx:rtl:pr-3 hx:rtl:pl-2"&gt;&lt;svg height=1.2em class="hx:inline-block hx:align-middle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/&gt;&lt;/svg&gt;&lt;/div&gt;
+&lt;div class="hx:w-full hx:min-w-0 hx:leading-7"&gt;
+&lt;div class="hx:mt-6 hx:leading-7 hx:first:mt-0"&gt;Ohne Container verweigern Sie dem Agenten den Lesezugriff auf &lt;code&gt;~/.ssh&lt;/code&gt;, &lt;code&gt;~/.config/gh&lt;/code&gt; und
+&lt;code&gt;~/.cache/agent-token&lt;/code&gt;.&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Was jedes Skript tut, steht unter &lt;a href="../../reference/client-cli/"&gt;Client-Befehle&lt;/a&gt;.&lt;/p&gt;</description></item><item><title>Installationsskript</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/install-script/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/install-script/</guid><description>
+&lt;p&gt;Installieren Sie die Client-Skripte aus einem Release-Tarball, ohne Paketmanager.&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;curl -fsSL https://raw.githubusercontent.com/pflege-de-labs/token-broker/main/scripts/install.sh &lt;span class="p"&gt;|&lt;/span&gt; bash&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Das Skript:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;lädt &lt;code&gt;agent-token-&amp;lt;version&amp;gt;.tar.gz&lt;/code&gt; aus dem Release und prüft dessen sha256 gegen die
+&lt;code&gt;checksums.txt&lt;/code&gt; des Releases;&lt;/li&gt;
+&lt;li&gt;installiert die Skripte nach &lt;code&gt;$PREFIX/bin&lt;/code&gt;, wobei &lt;code&gt;PREFIX&lt;/code&gt; standardmäßig &lt;code&gt;~/.local&lt;/code&gt; ist;&lt;/li&gt;
+&lt;li&gt;installiert &lt;code&gt;agent-gh&lt;/code&gt; als &lt;code&gt;agent-gh&lt;/code&gt;, nie als &lt;code&gt;gh&lt;/code&gt; auf Ihrem Rechner;&lt;/li&gt;
+&lt;li&gt;ändert nie Ihre globale git-Konfiguration.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Stellen Sie sicher, dass &lt;code&gt;$PREFIX/bin&lt;/code&gt; in Ihrem &lt;code&gt;PATH&lt;/code&gt; liegt.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="pin-a-version"&gt;Version festlegen&lt;span class="hx:absolute hx:-mt-20" id="pin-a-version"&gt;&lt;/span&gt;
+&lt;a href="#pin-a-version" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;curl -fsSL https://raw.githubusercontent.com/pflege-de-labs/token-broker/main/scripts/install.sh &lt;span class="se"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;|&lt;/span&gt; bash -s -- --version v0.6.0&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 data-hextra-search-id="choose-the-install-directory"&gt;Installationsverzeichnis wählen&lt;span class="hx:absolute hx:-mt-20" id="choose-the-install-directory"&gt;&lt;/span&gt;
+&lt;a href="#choose-the-install-directory" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;curl -fsSL https://raw.githubusercontent.com/pflege-de-labs/token-broker/main/scripts/install.sh &lt;span class="se"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;|&lt;/span&gt; &lt;span class="nv"&gt;PREFIX&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;/opt/agent bash&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Jedes &lt;code&gt;v*&lt;/code&gt;-Release enthält &lt;code&gt;agent-token-&amp;lt;version&amp;gt;.tar.gz&lt;/code&gt; (die Skripte in &lt;code&gt;bin/&lt;/code&gt;) und
+&lt;code&gt;checksums.txt&lt;/code&gt;. Das Skript braucht &lt;code&gt;bash&lt;/code&gt;, &lt;code&gt;curl&lt;/code&gt; und &lt;code&gt;jq&lt;/code&gt;; &lt;code&gt;gh&lt;/code&gt; wird für &lt;code&gt;agent-gh&lt;/code&gt; gebraucht.&lt;/p&gt;</description></item><item><title>Container</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/container/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/container/</guid><description>
+&lt;p&gt;&lt;code&gt;agent-run&lt;/code&gt; startet Claude Code in einem Container, dessen einzige GitHub-Zugangsdaten ein
+Agent-Token für ein Repository sind. Ihre SSH-Schlüssel, Ihr &lt;code&gt;gh&lt;/code&gt;-Login, Ihre git-Konfiguration und
+das Login-Token des Brokers bleiben auf Ihrem Rechner.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="before-you-start"&gt;Bevor Sie beginnen&lt;span class="hx:absolute hx:-mt-20" id="before-you-start"&gt;&lt;/span&gt;
+&lt;a href="#before-you-start" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;podman&lt;/code&gt;, &lt;code&gt;curl&lt;/code&gt;, &lt;code&gt;jq&lt;/code&gt; und &lt;code&gt;git&lt;/code&gt; auf dem Rechner.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;agent-token&lt;/code&gt; in Ihrem &lt;code&gt;PATH&lt;/code&gt; (&lt;a href="../homebrew/"&gt;Homebrew&lt;/a&gt; oder &lt;a href="../install-script/"&gt;Installationsskript&lt;/a&gt;).&lt;/li&gt;
+&lt;li&gt;Ein Klon des &lt;a href="https://github.com/pflege-de-labs/token-broker" target="_blank" rel="noopener"&gt;token-broker-Repositorys&lt;/a&gt;, das
+&lt;code&gt;agent-run&lt;/code&gt; und die Image-Definition in &lt;code&gt;container/&lt;/code&gt; enthält.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 data-hextra-search-id="build-the-image"&gt;Image bauen&lt;span class="hx:absolute hx:-mt-20" id="build-the-image"&gt;&lt;/span&gt;
+&lt;a href="#build-the-image" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;podman build -t localhost/agent-sandbox:latest container/&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 data-hextra-search-id="configure"&gt;Konfigurieren&lt;span class="hx:absolute hx:-mt-20" id="configure"&gt;&lt;/span&gt;
+&lt;a href="#configure" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nb"&gt;export&lt;/span&gt; &lt;span class="nv"&gt;TOKEN_BROKER_URL&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;https://&amp;lt;broker&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nb"&gt;export&lt;/span&gt; &lt;span class="nv"&gt;AGENT_APP_SLUG&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;agent app slug&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nb"&gt;export&lt;/span&gt; &lt;span class="nv"&gt;CLAUDE_CODE_OAUTH_TOKEN&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;from &lt;span class="sb"&gt;`&lt;/span&gt;claude setup-token&lt;span class="sb"&gt;`&lt;/span&gt;&amp;gt; &lt;span class="c1"&gt;# or ANTHROPIC_API_KEY&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 data-hextra-search-id="run"&gt;Starten&lt;span class="hx:absolute hx:-mt-20" id="run"&gt;&lt;/span&gt;
+&lt;a href="#run" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Aus einem Checkout heraus (ein Klon oder ein git Worktree):&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;/path/to/token-broker/agent-run &lt;span class="c1"&gt;# repository from the `origin` remote&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;/path/to/token-broker/agent-run my-org/my-repo &lt;span class="c1"&gt;# explicit repository&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;/path/to/token-broker/agent-run -p &lt;span class="s2"&gt;&amp;#34;fix the failing test&amp;#34;&lt;/span&gt; &lt;span class="c1"&gt;# arguments go to claude&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;code&gt;agent-run&lt;/code&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;holt mit &lt;code&gt;agent-token&lt;/code&gt; ein Agent-Token (beim ersten Mal per Device Flow) und erneuert es alle 45
+Minuten, solange die Sitzung läuft; der Container liest es aus einer schreibgeschützten Datei;&lt;/li&gt;
+&lt;li&gt;bindet den Checkout unter demselben Pfad ein, dazu das &lt;code&gt;.git&lt;/code&gt; des Haupt-Repositorys für
+Worktrees;&lt;/li&gt;
+&lt;li&gt;schreibt GitHub-SSH-Remotes auf HTTPS um, damit git mit dem Agent-Token pusht;&lt;/li&gt;
+&lt;li&gt;setzt die Commit-Identität auf
+&lt;code&gt;&amp;lt;app&amp;gt;[bot] &amp;lt;&amp;lt;bot user ID&amp;gt;+&amp;lt;app&amp;gt;[bot]@users.noreply.github.com&amp;gt;&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;hält die Einstellungen von Claude Code im benannten Volume &lt;code&gt;agent-claude&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;bildet Ihren Benutzer auf den Container-Benutzer ab, damit Dateien Ihnen gehören;&lt;/li&gt;
+&lt;li&gt;installiert vor dem Start von Claude die Toolchain des Repositorys aus &lt;code&gt;mise.toml&lt;/code&gt; oder
+&lt;code&gt;.tool-versions&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;AGENT_IMAGE&lt;/code&gt; wählt ein anderes Image. &lt;code&gt;AGENT_PODMAN_ARGS&lt;/code&gt; ergänzt podman-Flags, zum Beispiel
+&lt;code&gt;--entrypoint sh&lt;/code&gt; für eine Shell statt Claude.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="toolchains"&gt;Toolchains&lt;span class="hx:absolute hx:-mt-20" id="toolchains"&gt;&lt;/span&gt;
+&lt;a href="#toolchains" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Das Image enthält nur, was jedes Repository braucht: git, &lt;code&gt;gh&lt;/code&gt;, &lt;code&gt;jq&lt;/code&gt;, &lt;code&gt;curl&lt;/code&gt;, &lt;code&gt;make&lt;/code&gt;, &lt;code&gt;unzip&lt;/code&gt;,
+ripgrep, shellcheck, python3 und &lt;a href="https://mise.jdx.dev" target="_blank" rel="noopener"&gt;mise&lt;/a&gt;. Alles andere kommt aus der
+mise-Konfiguration des Repositorys, in den dort festgelegten Versionen. Installationen und Caches
+liegen in den Volumes &lt;code&gt;agent-mise&lt;/code&gt; und &lt;code&gt;agent-cache&lt;/code&gt;, daher lädt nur die erste Sitzung je Version
+herunter. Ein Repository ohne mise-Konfiguration bekommt keine zusätzlichen Tools.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;agent-run&lt;/code&gt; vertraut nur der mise-Konfiguration des eingebundenen Checkouts. Ein fehlgeschlagenes
+&lt;code&gt;mise install&lt;/code&gt; gibt eine Warnung aus, und Claude startet trotzdem.&lt;/p&gt;
+&lt;div class="hx:overflow-x-auto hx:mt-6 hx:flex hx:rounded-lg hx:border hx:py-2 hx:ltr:pr-4 hx:rtl:pl-4 hx:contrast-more:border-current hx:contrast-more:dark:border-current hx:border-amber-200 hx:bg-amber-100 hx:text-amber-900 hx:dark:border-amber-200/30 hx:dark:bg-amber-900/30 hx:dark:text-amber-200"&gt;
+&lt;div class="hx:ltr:pl-3 hx:ltr:pr-2 hx:rtl:pr-3 hx:rtl:pl-2"&gt;&lt;svg height=1.2em class="hx:inline-block hx:align-middle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/&gt;&lt;/svg&gt;&lt;/div&gt;
+&lt;div class="hx:w-full hx:min-w-0 hx:leading-7"&gt;
+&lt;div class="hx:mt-6 hx:leading-7 hx:first:mt-0"&gt;Binden Sie nie Cloud-Zugangsdaten (&lt;code&gt;~/.aws&lt;/code&gt;, Kubeconfigs) ein: Es sind Entwickler-Zugangsdaten.
+Lassen Sie den Agenten Code schreiben und &lt;code&gt;terraform plan&lt;/code&gt; stattdessen in der CI ausführen.&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 data-hextra-search-id="limits"&gt;Grenzen&lt;span class="hx:absolute hx:-mt-20" id="limits"&gt;&lt;/span&gt;
+&lt;a href="#limits" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;Das Token gilt für ein Repository: Der Abruf privater Abhängigkeiten aus anderen Repositories,
+etwa Go-Modulen, schlägt fehl.&lt;/li&gt;
+&lt;li&gt;Commits sind unsigniert; mergen Sie Agent-Pull-Requests mit Squash.&lt;/li&gt;
+&lt;li&gt;Nach 8 Stunden läuft das Login-Token ab, und die nächste Erneuerung gibt einen Device-Code im
+Terminal aus.&lt;/li&gt;
+&lt;/ul&gt;</description></item><item><title>Dev Container</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/devcontainer/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/devcontainer/</guid><description>
+&lt;p&gt;Das Dev Container Feature &lt;code&gt;agent-token&lt;/code&gt; installiert die Client-Skripte, auf ein Release festgelegt,
+in einen Devcontainer. Es wird in
+&lt;a href="https://github.com/pflege-de-labs/devcontainer-features#agent-token" target="_blank" rel="noopener"&gt;pflege-de-labs/devcontainer-features&lt;/a&gt;
+veröffentlicht.&lt;/p&gt;
+&lt;p&gt;Das
+&lt;a href="https://github.com/pflege-de-labs/token-broker/tree/main/.devcontainer" target="_blank" rel="noopener"&gt;&lt;code&gt;.devcontainer/&lt;/code&gt;&lt;/a&gt; des
+token-broker-Repositorys ist ein funktionierendes Setup zum Kopieren. Es:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;installiert die Skripte mit dem Feature (in &lt;code&gt;devcontainer.json&lt;/code&gt; per Digest festgelegt);&lt;/li&gt;
+&lt;li&gt;setzt die Bot-Identität und installiert Claude Code sowie die Toolchain aus &lt;code&gt;mise.toml&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;ergänzt einen SessionStart-Hook als Managed Settings, der erinnert, wenn der Login fehlt;&lt;/li&gt;
+&lt;li&gt;begrenzt ausgehenden Verkehr mit einer Egress-Firewall auf eine Positivliste von Domains plus den
+Broker-Host.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Beim ersten Verbinden zeigt das Terminal einen Device-Code; melden Sie sich dort an. Mit Podman
+setzen Sie &lt;code&gt;&amp;quot;dev.containers.dockerPath&amp;quot;: &amp;quot;podman&amp;quot;&lt;/code&gt; in Ihren VS-Code-Einstellungen.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="broker-url-and-login-app"&gt;Broker-URL und Login-App&lt;span class="hx:absolute hx:-mt-20" id="broker-url-and-login-app"&gt;&lt;/span&gt;
+&lt;a href="#broker-url-and-login-app" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Zwei Actions-Variablen liefern die Broker-URL und die Client-ID der Login-App, nicht das
+Repository:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Variable&lt;/th&gt;
+&lt;th&gt;Umgebung im Container&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;AGENT_TOKEN_BROKER_URL&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;AGENT_LOGIN_CLIENT_ID&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;LOGIN_APP_CLIENT_ID&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Eine Repository-Variable gleichen Namens überschreibt den Wert der Organisation. Im Container kann
+nichts Variablen lesen, deshalb läuft
+&lt;a href="https://github.com/pflege-de-labs/token-broker/blob/main/.devcontainer/broker-env.sh" target="_blank" rel="noopener"&gt;&lt;code&gt;broker-env.sh&lt;/code&gt;&lt;/a&gt;
+als &lt;code&gt;initializeCommand&lt;/code&gt; auf dem Rechner. Es braucht &lt;code&gt;gh&lt;/code&gt; (angemeldet, Scope &lt;code&gt;repo&lt;/code&gt;) und &lt;code&gt;jq&lt;/code&gt;, liest
+beide Variablen für das &lt;code&gt;origin&lt;/code&gt;-Repository und schreibt &lt;code&gt;.devcontainer/.env&lt;/code&gt;, das &lt;code&gt;runArgs&lt;/code&gt; mit
+&lt;code&gt;--env-file&lt;/code&gt; übergibt:&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-jsonc" data-lang="jsonc"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="nt"&gt;&amp;#34;initializeCommand&amp;#34;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;.devcontainer/broker-env.sh&amp;#34;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="nt"&gt;&amp;#34;runArgs&amp;#34;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;#34;--env-file=${localWorkspaceFolder}/.devcontainer/.env&amp;#34;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 data-hextra-search-id="things-to-know"&gt;Gut zu wissen&lt;span class="hx:absolute hx:-mt-20" id="things-to-know"&gt;&lt;/span&gt;
+&lt;a href="#things-to-know" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;Alles, was im Container committet oder gepusht wird, geht als Bot der Agent-App hinaus, auch
+Commits aus der Source-Control-Ansicht von VS Code. Committen Sie als Sie selbst auf dem Rechner.&lt;/li&gt;
+&lt;li&gt;Der Agent committet mit &lt;a href="../../guides/signed-commits/"&gt;&lt;code&gt;agent-commit&lt;/code&gt;&lt;/a&gt;, damit Branches, die
+Signaturen verlangen, die Commits akzeptieren.&lt;/li&gt;
+&lt;li&gt;VS Code leitet Ihre Zugangsdaten in Devcontainer weiter. Das Setup schaltet
+&lt;code&gt;git.terminalAuthentication&lt;/code&gt; und &lt;code&gt;github.gitAuthentication&lt;/code&gt; ab, überschreibt &lt;code&gt;GIT_AUTHOR_*&lt;/code&gt; und
+&lt;code&gt;GIT_COMMITTER_*&lt;/code&gt; und lässt den Credential-Helper &lt;code&gt;quit=1&lt;/code&gt; antworten, wenn er kein Token hat. Ihr
+SSH-Agent wird weiterhin weitergeleitet: Die Firewall blockiert Port 22, aber er kann noch
+signieren. Für volle Isolation nutzen Sie &lt;a href="../container/"&gt;&lt;code&gt;agent-run&lt;/code&gt;&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Ein git Worktree funktioniert nicht als Workspace, weil sein &lt;code&gt;.git&lt;/code&gt; außerhalb des Mounts zeigt.
+Öffnen Sie einen Klon.&lt;/li&gt;
+&lt;li&gt;Netzwerkzugriff über die Positivliste hinaus braucht eine Änderung an &lt;code&gt;allowed-domains&lt;/code&gt; und einen
+Rebuild.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Für ein Image ohne das Feature siehe
+&lt;a href="../../guides/image-without-feature/"&gt;Die Skripte im eigenen Image nutzen&lt;/a&gt;. Für den GitHub-MCP-Server
+siehe &lt;a href="../../reference/client-cli/#agent-github-mcp"&gt;&lt;code&gt;agent-github-mcp&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;</description></item><item><title>Kubernetes</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/kubernetes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/kubernetes/</guid><description>
+&lt;p&gt;Deployen Sie den Broker mit dem Helm-Chart. Legen Sie zuerst die beiden GitHub-Apps an, wie unter
+&lt;a href="../../guides/github-apps/"&gt;GitHub-Apps einrichten&lt;/a&gt; beschrieben.&lt;/p&gt;
+&lt;p&gt;Das Image ist &lt;code&gt;ghcr.io/pflege-de-labs/token-broker&lt;/code&gt;; das Chart wird unter
+&lt;code&gt;oci://ghcr.io/pflege-de-labs/charts/token-broker&lt;/code&gt; veröffentlicht. Das Chart hat keine
+deployment-spezifischen Defaults.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="1-create-the-secret"&gt;1. Secret anlegen&lt;span class="hx:absolute hx:-mt-20" id="1-create-the-secret"&gt;&lt;/span&gt;
+&lt;a href="#1-create-the-secret" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;kubectl create secret generic token-broker-credentials &lt;span class="se"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; --from-file&lt;span class="o"&gt;=&lt;/span&gt;private-key.pem&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;agent-app&amp;gt;.private-key.pem &lt;span class="se"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; --from-literal&lt;span class="o"&gt;=&lt;/span&gt;login-client-secret&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;#34;&lt;/span&gt;&lt;span class="nv"&gt;$LOGIN_CLIENT_SECRET&lt;/span&gt;&lt;span class="s2"&gt;&amp;#34;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 data-hextra-search-id="2-write-the-values"&gt;2. Values schreiben&lt;span class="hx:absolute hx:-mt-20" id="2-write-the-values"&gt;&lt;/span&gt;
+&lt;a href="#2-write-the-values" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-yaml" data-lang="yaml"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nt"&gt;existingSecret&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l"&gt;token-broker-credentials&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nt"&gt;config&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;appId&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;#34;&amp;lt;agent app ID&amp;gt;&amp;#34;&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;org&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l"&gt;my-org&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;loginClientId&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;#34;&amp;lt;login app client ID&amp;gt;&amp;#34;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;code&gt;config.org&lt;/code&gt; ist eine kommagetrennte Liste; nur Repositories dieser Organisationen bekommen Tokens.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="3-install"&gt;3. Installieren&lt;span class="hx:absolute hx:-mt-20" id="3-install"&gt;&lt;/span&gt;
+&lt;a href="#3-install" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;helm install token-broker oci://ghcr.io/pflege-de-labs/charts/token-broker &lt;span class="se"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; --namespace token-broker --create-namespace -f values.yaml&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 data-hextra-search-id="4-expose-it"&gt;4. Erreichbar machen&lt;span class="hx:absolute hx:-mt-20" id="4-expose-it"&gt;&lt;/span&gt;
+&lt;a href="#4-expose-it" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Entwickler und Runner mit Zugang zum internen Netz erreichen den Broker über &lt;code&gt;ingress&lt;/code&gt; oder
+&lt;code&gt;httpRoute&lt;/code&gt;. Halten Sie diese Route intern: Die Client-ID des Device Flows ist öffentlich, ein
+erreichbarer Broker lädt daher zu Phishing ein. Workflows auf GitHub-gehosteten Runnern brauchen
+die öffentliche &lt;code&gt;actionsRoute&lt;/code&gt;, die nur &lt;code&gt;POST&lt;/code&gt; auf einem Pfad an &lt;code&gt;/token/actions&lt;/code&gt; weiterleitet
+(&lt;a href="../../guides/actions/"&gt;Details&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;Der Broker braucht ausgehenden Zugriff nur auf &lt;code&gt;api.github.com&lt;/code&gt; und
+&lt;code&gt;token.actions.githubusercontent.com&lt;/code&gt;; GitHub ruft ihn nie auf. Betreiben Sie ihn hinter TLS.&lt;/p&gt;
+&lt;p&gt;Prüfen Sie ihn mit &lt;code&gt;GET /healthz&lt;/code&gt; und &lt;code&gt;GET /readyz&lt;/code&gt;; &lt;code&gt;/readyz&lt;/code&gt; gelingt, wenn GitHub den App-Schlüssel
+akzeptiert. Siehe &lt;a href="../../reference/helm-values/"&gt;Helm-Values&lt;/a&gt; und
+&lt;a href="../../reference/broker-config/"&gt;Broker-Konfiguration&lt;/a&gt;.&lt;/p&gt;</description></item></channel></rss>
