@@ -11,5 +11,5 @@ keywords:
   - agents
 # The chart is versioned independently of the application; appVersion tracks the
 # token-broker release whose image the defaults point at.
-version: 0.5.0
-appVersion: "0.5.0"
+version: 0.6.0
+appVersion: "0.6.0"
