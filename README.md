@@ -28,11 +28,24 @@ token's `repository` and `sub` claims name it, and the agent app is installed th
 
 ## Use it locally
 
-Requirements: `curl`, `jq`, `gh`, and the [client scripts](client/README.md) (`client/bin` or a
-release's `agent-token-<version>.tar.gz` on your `PATH`). You need the broker URL from the deployment; the broker
-serves the login app's client ID (`GET /login-app`) (pflege-de: [cc-gitops `docs/token-broker.md`](https://github.com/pflege-de/cc-gitops/blob/main/docs/token-broker.md)).
+Full guide: <https://pflege-de-labs.github.io/token-broker/>. Requirements: `curl`, `jq`, `gh`, `git`.
+
+With Claude Code, install the plugin. It brings the [client scripts](client/README.md) and reads
+the broker URL from the org variable `AGENT_TOKEN_BROKER_URL` ([docs/claude-plugin.md](docs/claude-plugin.md)):
 
 ```sh
+claude plugin marketplace add pflege-de-labs/token-broker
+claude plugin install agent-token@pflege-de-token-broker
+```
+
+Without Claude Code (or for `agent-run`), install a pinned release of the scripts with Homebrew or
+the install script (ADR 15). You need the broker URL from the deployment; the broker serves the
+login app's client ID (`GET /login-app`) (pflege-de: [cc-gitops `docs/token-broker.md`](https://github.com/pflege-de/cc-gitops/blob/main/docs/token-broker.md)).
+
+```sh
+brew tap pflege-de-labs/token-broker https://github.com/pflege-de-labs/token-broker
+brew install agent-token
+# or: curl -fsSL https://raw.githubusercontent.com/pflege-de-labs/token-broker/main/scripts/install.sh | bash
 export TOKEN_BROKER_URL=https://<broker>   # internal route
 agent-token my-org/my-repo                # prints a 1h agent token
 ```
@@ -46,8 +59,8 @@ token during long sessions and keeps your own keys and `gh` login out of the con
 Without a container, deny the agent read access to `~/.ssh`, `~/.config/gh` and
 `~/.cache/agent-token`.
 
-Running Claude Code on the host instead? The Claude Code plugin `agent-token` detects repos that
-use agent tokens and tells Claude to commit and call GitHub with them: [docs/claude-plugin.md](docs/claude-plugin.md).
+On the host, the plugin detects repos that use agent tokens and tells Claude to commit and call
+GitHub with them; it is a guardrail, not a sandbox.
 
 Commits made with local git are not signed. Merge agent PRs with **squash**, so the commit on
 a branch that requires signatures is created and signed by GitHub.

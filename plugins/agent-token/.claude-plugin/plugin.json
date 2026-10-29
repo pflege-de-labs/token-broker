@@ -1,10 +1,17 @@
 {
   "name": "agent-token",
-  "description": "Detects repositories that use token-broker agent tokens, tells Claude to commit and call GitHub as the agent app and blocks git commit, git push and gh with the user's credentials",
+  "description": "Brings the token-broker client scripts, tells Claude to commit and call GitHub as the agent app in repositories with the topic agent-token-broker, and blocks git commit, git push and gh with the user's credentials",
   "author": {
     "name": "pflege.de"
   },
-  "homepage": "https://github.com/pflege-de-labs/token-broker/blob/main/docs/claude-plugin.md",
+  "homepage": "https://pflege-de-labs.github.io/token-broker/docs/getting-started/claude-code/",
   "repository": "https://github.com/pflege-de-labs/token-broker",
-  "keywords": ["github", "token-broker", "agent"]
+  "keywords": ["github", "token-broker", "agent"],
+  "userConfig": {
+    "broker_url": {
+      "type": "string",
+      "title": "Broker URL",
+      "description": "Internal token-broker URL. Leave empty to read the org variable AGENT_TOKEN_BROKER_URL with your gh login."
+    }
+  }
 }
