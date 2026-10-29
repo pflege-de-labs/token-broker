@@ -11,7 +11,8 @@ set -euo pipefail
 version=dev # release.yml stamps the release version
 if [[ ${1:-} == --version ]]; then echo "agent-token $version"; exit; fi
 : "${TOKEN_BROKER_URL:?set TOKEN_BROKER_URL, e.g. https://token-broker.internal}"
-repo="${1:?usage: agent-token org/repo | --login | --check | --permissions org/repo | --version}"
+usage="usage: agent-token org/repo | --login | --check | --permissions org/repo | --version"
+repo="${1:?$usage}"
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/agent-token"
 cache="$cache_dir/login.json"
 
@@ -59,6 +60,8 @@ case $repo in
   --check) cached "$cache" 300 >/dev/null || { echo "agent-token: not logged in; run: agent-token --login" >&2; exit 1; }; exit ;;
   --permissions) show=permissions; repo=${2:?usage: agent-token --permissions org/repo} ;;
 esac
+# Before any login or request: an unknown flag reached the broker as a repo name; the name is also a cache path.
+[[ $repo =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]] || { echo "agent-token: not a repo or option: $repo; $usage" >&2; exit 2; }
 
 # git and gh ask for every call, so reuse a repo token until 5 minutes before it expires.
 repo_cache="$cache_dir/repos/${repo//\//__}.json"
