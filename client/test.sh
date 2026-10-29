@@ -43,4 +43,19 @@ jq '.permissions = null' "$cache" >"$dir/x" && mv "$dir/x" "$cache"
 rm "$cache"
 at 18082 --permissions acme/app 2>/dev/null && fail "broker without permissions accepted"
 [[ $(at 18082 acme/app) == ghs_fake ]] || fail "token after broker without permissions"
+# gh wrapper: a fake real gh behind it records what reaches it.
+mkdir -p "$dir/wrap" "$dir/real" "$dir/nogit"
+cp "$(dirname "$0")/bin/agent-gh" "$dir/wrap/gh"
+printf '#!/bin/sh\necho "real gh $*" >>"%s/real.log"\n' "$dir" >"$dir/real/gh"
+chmod 755 "$dir/wrap/gh" "$dir/real/gh"
+gh() { (cd "$dir/nogit" && PATH="$dir/wrap:$(dirname "$0")/bin:$dir/real:$PATH" TOKEN_BROKER_URL=http://127.0.0.1:18081 GH_REPO="" command gh "$@"); }
+for sub in login refresh setup-git; do
+  gh auth "$sub" 2>/dev/null && fail "gh auth $sub allowed"
+done
+[[ ! -e $dir/real.log ]] || fail "disabled gh auth reached the real gh"
+gh auth status 2>/dev/null || fail "gh auth status without repo while logged in"
+rm "$dir/agent-token/login.json"
+gh auth status 2>/dev/null && fail "gh auth status without repo while logged out"
+gh pr list 2>/dev/null
+grep -q "real gh pr list" "$dir/real.log" || fail "other commands without repo pass through"
 echo "client tests passed"

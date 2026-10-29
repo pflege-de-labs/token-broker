@@ -84,8 +84,8 @@ container, deny the agent read access to `~/.ssh`, `~/.config/gh` and `~/.cache/
 - A volume for `~/.cache/agent-token`, so the login survives container restarts. It holds the
   developer's login token (8h) and agent tokens (1h); keep it per developer, never shared.
 
-Do not run `gh auth login` or `gh auth setup-git` in the container: the agent should act only as
-the agent app. Commands without one target repo (`gh api orgs/...`) get no agent token and fail
+The agent should act only as the agent app, so the wrapper refuses `gh auth login`, `refresh` and
+`setup-git`; outside a checkout `gh auth status` reports the agent-token login instead. Commands without one target repo (`gh api orgs/...`) get no agent token and fail
 unauthenticated, by design.
 
 Install a pinned release, checked against its sha256 (from the release's `checksums.txt`):
