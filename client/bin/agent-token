@@ -2,12 +2,13 @@
 # Usage: agent-token org/repo  — prints a 1h agent token for that repo.
 #        agent-token --login   — logs in via the login app's device flow (interactive).
 #        agent-token --check   — exits 1 unless a login is cached.
+#        agent-token --permissions org/repo — prints the permissions GitHub granted that token (JSON).
 # Logs in once via the login app's device flow and caches that login token.
 # LOGIN_APP_CLIENT_ID overrides the login app the broker names at /login-app.
 # AGENT_TOKEN_NONINTERACTIVE=1 fails instead of starting a device flow nobody would see.
 set -euo pipefail
 : "${TOKEN_BROKER_URL:?set TOKEN_BROKER_URL, e.g. https://token-broker.internal}"
-repo="${1:?usage: agent-token org/repo | --login | --check}"
+repo="${1:?usage: agent-token org/repo | --login | --check | --permissions org/repo}"
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/agent-token"
 cache="$cache_dir/login.json"
 
@@ -53,11 +54,17 @@ login_token() {
 case $repo in
   --login) login_token >/dev/null; echo "agent-token: logged in" >&2; exit ;;
   --check) cached "$cache" 300 >/dev/null || { echo "agent-token: not logged in; run: agent-token --login" >&2; exit 1; }; exit ;;
+  --permissions) show=permissions; repo=${2:?usage: agent-token --permissions org/repo} ;;
 esac
 
 # git and gh ask for every call, so reuse a repo token until 5 minutes before it expires.
 repo_cache="$cache_dir/repos/${repo//\//__}.json"
-cached "$repo_cache" 300 && exit
+if [[ ${show:-} ]]; then
+  # Caches written before permissions were stored hold null; mint a fresh token for those.
+  cached "$repo_cache" 300 >/dev/null && jq -e '.permissions // empty' "$repo_cache" && exit
+else
+  cached "$repo_cache" 300 && exit
+fi
 
 # Separate assignment so a failed login aborts here under set -e.
 bearer=$(login_token)
@@ -77,5 +84,9 @@ if [[ $status != 200 ]]; then
   exit 1
 fi
 (umask 077 && mkdir -p "$cache_dir/repos" &&
-  jq '{access_token: .token, expires_at: (.expires_at | fromdateiso8601)}' <<<"$body" >"$repo_cache")
-jq -r .token <<<"$body"
+  jq '{access_token: .token, expires_at: (.expires_at | fromdateiso8601), permissions}' <<<"$body" >"$repo_cache")
+if [[ ${show:-} ]]; then
+  jq -e '.permissions // empty' <<<"$body" || { echo "agent-token: broker sends no permissions; upgrade it to >= 0.6.0" >&2; exit 1; }
+else
+  jq -r .token <<<"$body"
+fi

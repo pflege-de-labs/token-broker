@@ -89,7 +89,8 @@ func newTestBroker(t *testing.T) (*broker, *map[string]any) {
 				return
 			}
 			minted = body
-			_, _ = w.Write([]byte(`{"token":"ghs_agent","expires_at":"2026-01-01T00:00:00Z"}`))
+			// Like GitHub, grant what was requested.
+			_ = json.NewEncoder(w).Encode(map[string]any{"token": "ghs_agent", "expires_at": "2026-01-01T00:00:00Z", "permissions": body["permissions"]})
 		case strings.HasPrefix(r.URL.Path, "/repos/acme/app/collaborators/") && auth == "Bearer ghs_check":
 			perm := map[string]string{"dev": "write", "reader": "read"}[strings.Split(r.URL.Path, "/")[5]]
 			_, _ = w.Write([]byte(`{"permission":"` + perm + `"}`))
@@ -150,8 +151,8 @@ func TestHandleToken(t *testing.T) {
 				}
 				return
 			}
-			if !strings.Contains(rec.Body.String(), "ghs_agent") {
-				t.Errorf("body missing token: %s", rec.Body)
+			if !strings.Contains(rec.Body.String(), "ghs_agent") || !strings.Contains(rec.Body.String(), `"contents":"write"`) {
+				t.Errorf("body missing token or granted permissions: %s", rec.Body)
 			}
 			repos, _ := (*minted)["repositories"].([]any)
 			if len(repos) != 1 || repos[0] != "app" {

@@ -6,7 +6,7 @@ need one. Agent tokens live 1h and cover one repo, while sessions run longer and
 
 | Script (`bin/`) | Role |
 |---|---|
-| `agent-token` | Device-flow login (`--login`), login check (`--check`), token per repo with a cache |
+| `agent-token` | Device-flow login (`--login`), login check (`--check`), token per repo with a cache; `--permissions org/repo` prints what GitHub granted that token |
 | `agent-token-git-credential` | git credential helper for `github.com` |
 | `agent-gh` | Wrapper installed as `gh`; sets `GH_TOKEN` for the target repo |
 | `agent-github-mcp` | Starts the local `github-mcp-server` with a token for the current repo (optional) |
