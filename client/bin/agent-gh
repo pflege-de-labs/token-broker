@@ -9,6 +9,12 @@ while read -r candidate; do
 done < <(type -ap gh)
 [[ -n $real ]] || { echo "agent-gh: no real gh found in PATH" >&2; exit 1; }
 
+# The agent acts only as the agent app: no stored gh credentials, which these would create or use.
+if [[ ${1:-} == auth && ${2:-} =~ ^(login|refresh|setup-git)$ ]]; then
+  echo "agent-gh: gh auth $2 is disabled; gh gets agent tokens per repo. Log in with: agent-token --login" >&2
+  exit 1
+fi
+
 # Same precedence as gh: --repo flag, then GH_REPO, then the origin remote.
 repo=${GH_REPO:-}
 args=("$@")
@@ -27,6 +33,11 @@ repo=${repo%.git}
 repo=${repo#*github.com[:/]}
 if [[ $repo =~ ^[^/]+/[^/]+/[^/]+$ ]]; then repo=${repo#*/}; fi
 if [[ ! $repo =~ ^[^/]+/[^/]+$ ]]; then
+  if [[ ${1:-} == auth && ${2:-} == status ]]; then
+    agent-token --check || exit
+    echo "agent-token: logged in; gh gets an agent token per repo (in a checkout or with -R org/repo)" >&2
+    exit
+  fi
   # shortcut: no token without one target repo (e.g. `gh api orgs/...`); gh then uses its own auth, if any.
   exec "$real" "$@"
 fi

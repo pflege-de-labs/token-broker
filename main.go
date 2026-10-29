@@ -319,9 +319,9 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	outcome = "issued"
-	slog.Info("token issued", append([]any{"via", via, "expires_at", tok.ExpiresAt}, audit...)...)
+	slog.Info("token issued", append([]any{"via", via, "expires_at", tok.ExpiresAt, "permissions", tok.Permissions}, audit...)...)
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"token": tok.Token, "expires_at": tok.ExpiresAt})
+	_ = json.NewEncoder(w).Encode(map[string]any{"token": tok.Token, "expires_at": tok.ExpiresAt, "permissions": tok.Permissions})
 }
 
 // subjectMatches reports whether sub names owner/name, in either GitHub's classic form
@@ -343,6 +343,8 @@ func subjectMatches(c actionsClaims, owner, name string) bool {
 type installationToken struct {
 	Token     string `json:"token"`
 	ExpiresAt string `json:"expires_at"`
+	// What GitHub granted, which can be less than requested; passed on for debugging.
+	Permissions map[string]string `json:"permissions"`
 }
 
 func (b *broker) installationToken(ctx context.Context, jwt string, id int64, repo string, perms map[string]string) (installationToken, error) {

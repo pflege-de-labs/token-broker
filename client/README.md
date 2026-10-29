@@ -6,7 +6,7 @@ need one. Agent tokens live 1h and cover one repo, while sessions run longer and
 
 | Script (`bin/`) | Role |
 |---|---|
-| `agent-token` | Device-flow login (`--login`), login check (`--check`), token per repo with a cache |
+| `agent-token` | Device-flow login (`--login`), login check (`--check`), token per repo with a cache; `--permissions org/repo` prints what GitHub granted that token |
 | `agent-token-git-credential` | git credential helper for `github.com` |
 | `agent-gh` | Wrapper installed as `gh`; sets `GH_TOKEN` for the target repo |
 | `agent-github-mcp` | Starts the local `github-mcp-server` with a token for the current repo (optional) |
@@ -84,8 +84,8 @@ container, deny the agent read access to `~/.ssh`, `~/.config/gh` and `~/.cache/
 - A volume for `~/.cache/agent-token`, so the login survives container restarts. It holds the
   developer's login token (8h) and agent tokens (1h); keep it per developer, never shared.
 
-Do not run `gh auth login` or `gh auth setup-git` in the container: the agent should act only as
-the agent app. Commands without one target repo (`gh api orgs/...`) get no agent token and fail
+The agent should act only as the agent app, so the wrapper refuses `gh auth login`, `refresh` and
+`setup-git`; outside a checkout `gh auth status` reports the agent-token login instead. Commands without one target repo (`gh api orgs/...`) get no agent token and fail
 unauthenticated, by design.
 
 Install a pinned release, checked against its sha256 (from the release's `checksums.txt`):
