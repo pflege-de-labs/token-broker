@@ -155,7 +155,7 @@ which runners can use it.&lt;/p&gt;
 &lt;tbody&gt;
 &lt;tr&gt;
 &lt;td&gt;GitHub-hosted&lt;/td&gt;
-&lt;td&gt;public &lt;code&gt;POST &amp;lt;public URL&amp;gt;&lt;/code&gt; forwarded to &lt;code&gt;/token/actions&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;public &lt;code&gt;POST &amp;lt;public base URL&amp;gt;/token/actions&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;actionsRoute&lt;/code&gt;&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
@@ -168,7 +168,7 @@ which runners can use it.&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;/token/actions&lt;/code&gt; accepts Actions OIDC tokens and nothing else, so &lt;code&gt;actionsRoute&lt;/code&gt; can be public: it
 forwards exactly one path, &lt;code&gt;POST&lt;/code&gt; only, and developer logins, probes and metrics stay internal.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="workflow"&gt;Workflow&lt;span class="hx:absolute hx:-mt-20" id="workflow"&gt;&lt;/span&gt;
-&lt;a href="#workflow" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Workflows pick runner and URL from Actions variables, so one workflow serves both setups:&lt;/p&gt;
+&lt;a href="#workflow" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Workflows pick runner and broker URL from Actions variables, so one workflow serves both setups:&lt;/p&gt;
 &lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
 &lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-yaml" data-lang="yaml"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nt"&gt;jobs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;agent&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
@@ -179,11 +179,11 @@ forwards exactly one path, &lt;code&gt;POST&lt;/code&gt; only, and developer log
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;steps&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;- &lt;span class="nt"&gt;id&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l"&gt;agent&lt;/span&gt;&lt;span class="w"&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;env&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;TOKEN_BROKER_URL&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l"&gt;${{ vars.TOKEN_BROKER_URL }}&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;BROKER&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l"&gt;${{ vars.AGENT_TOKEN_BROKER_ACTIONS_URL }}&lt;/span&gt;&lt;span class="w"&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;run&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;|&lt;/span&gt;&lt;span class="sd"&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="sd"&gt; oidc=$(curl -fsS -H &amp;#34;Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN&amp;#34; \
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="sd"&gt; &amp;#34;$ACTIONS_ID_TOKEN_REQUEST_URL&amp;amp;audience=token-broker&amp;#34; | jq -r .value)
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="sd"&gt; token=$(curl -fsS &amp;#34;$TOKEN_BROKER_URL&amp;#34; -H &amp;#34;Authorization: Bearer $oidc&amp;#34; \
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="sd"&gt; token=$(curl -fsS &amp;#34;$BROKER/token/actions&amp;#34; -H &amp;#34;Authorization: Bearer $oidc&amp;#34; \
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="sd"&gt; -d &amp;#34;{\&amp;#34;repo\&amp;#34;:\&amp;#34;$GITHUB_REPOSITORY\&amp;#34;}&amp;#34; | jq -r .token)
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="sd"&gt; echo &amp;#34;::add-mask::$token&amp;#34;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="sd"&gt; echo &amp;#34;token=$token&amp;#34; &amp;gt;&amp;gt; &amp;#34;$GITHUB_OUTPUT&amp;#34;&lt;/span&gt;&lt;span class="w"&gt;
@@ -201,10 +201,12 @@ data-copied-label="Copied!"
 &lt;/button&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-&lt;p&gt;The audience must match &lt;code&gt;ACTIONS_OIDC_AUDIENCE&lt;/code&gt; (default &lt;code&gt;token-broker&lt;/code&gt;). Here
-&lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt; is the organization&amp;rsquo;s Actions variable holding the public &lt;code&gt;/token/actions&lt;/code&gt;
-URL. It is not the container variable of the same name; see
-&lt;a href="../../getting-started/devcontainer/"&gt;Dev Container&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The audience must match &lt;code&gt;ACTIONS_OIDC_AUDIENCE&lt;/code&gt; (default &lt;code&gt;token-broker&lt;/code&gt;).
+&lt;code&gt;AGENT_TOKEN_BROKER_ACTIONS_URL&lt;/code&gt; is the organization&amp;rsquo;s Actions variable with the broker&amp;rsquo;s base URL
+for workflows: the public route for GitHub-hosted runners, or the internal URL for self-hosted
+runners. The workflow appends &lt;code&gt;/token/actions&lt;/code&gt;. &lt;code&gt;AGENT_TOKEN_BROKER_URL&lt;/code&gt; is the internal URL for
+developer machines (&lt;a href="../../getting-started/devcontainer/"&gt;Dev Container&lt;/a&gt;); the public route does
+not serve their logins.&lt;/p&gt;
 &lt;p&gt;The token covers only the repository the workflow runs in: the broker requires both the
 &lt;code&gt;repository&lt;/code&gt; claim and &lt;code&gt;sub&lt;/code&gt; to name the requested repository. &lt;code&gt;sub&lt;/code&gt; is either the classic
 &lt;code&gt;repo:owner/name:…&lt;/code&gt; or the immutable &lt;code&gt;repo:owner@ID/name@ID:…&lt;/code&gt;, whose IDs are checked against the
