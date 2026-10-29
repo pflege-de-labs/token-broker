@@ -43,6 +43,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: plugins/agent-token/test.sh
 
+  # Client scripts ship as release assets that devcontainers pin; check them before a tag does.
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: shellcheck client/bin/* client/*.sh
+      - run: bash client/test.sh
+
   # No image ever exists for a commit whose checks failed.
   image:
     needs: checks
