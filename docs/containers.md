@@ -1,9 +1,10 @@
 # Agent tokens in containers
 
-A coding agent in a container gets agent tokens on demand, per repo, from the client scripts in
-[pflege-de-labs/devcontainer-features](https://github.com/pflege-de-labs/devcontainer-features)
-(`src/agent-token/`). Its README lists what an image needs: the scripts, the system git config
-and a volume for the login cache. This page covers the devcontainer of this repository.
+A coding agent in a container gets agent tokens on demand, per repo, from the
+[client scripts](../client/README.md), released with every `v*` tag and installed by the
+[agent-token devcontainer feature](https://github.com/pflege-de-labs/devcontainer-features#agent-token).
+The client README lists what an image needs: the scripts, the system git config and a volume for
+the login cache. This page covers the devcontainer of this repository.
 
 ## Devcontainer
 
@@ -63,8 +64,8 @@ Everything committed or pushed in the container goes out as `pflege-de-agent[bot
 commits from the Source Control view included. Commit as yourself from the host.
 
 `git commit` here makes unsigned commits, which main's `required_signatures` rule rejects
-unless the PR is squash-merged. The agent therefore commits with `agent-commit` (from
-devcontainer-features), which creates the commit through the GitHub API, signed by GitHub, and
+unless the PR is squash-merged. The agent therefore commits with [`agent-commit`](../client/README.md#signed-commits)
+(from the agent-token feature), which creates the commit through the GitHub API, signed by GitHub, and
 pushes it in the same step. `/etc/claude-code/CLAUDE.md` tells Claude Code to use it. It cannot
 commit new executables or mode changes; those need `git commit` and a squash merge.
 

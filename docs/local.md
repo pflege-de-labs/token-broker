@@ -6,9 +6,8 @@ host.
 
 ## Setup
 
-Requirements: `podman`, `curl`, `jq`, `git`, and `agent-token` on your `PATH`: clone
-[pflege-de-labs/devcontainer-features](https://github.com/pflege-de-labs/devcontainer-features)
-and add its `src/agent-token/bin`. Build the image once:
+Requirements: `podman`, `curl`, `jq`, `git`, and `agent-token` on your `PATH`: add this repo's
+[`client/bin`](../client/README.md). Build the image once:
 
 ```sh
 podman build -t localhost/agent-sandbox:latest container/
