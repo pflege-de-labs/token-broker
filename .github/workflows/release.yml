@@ -29,6 +29,31 @@ jobs:
       packages: write
       id-token: write
 
+  # Client scripts as release assets (ADR 14); after the image, so a release implies its image exists.
+  client:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Byte-reproducible: the devcontainer feature pins the sha256, and a re-run re-uploads the tarball.
+      - name: Package the client scripts
+        run: |
+          mkdir dist
+          tar -C client --sort=name --mtime="@$(git log -1 --format=%ct)" --owner=0 --group=0 --numeric-owner -cf - bin \
+            | gzip -n > "dist/agent-token-${GITHUB_REF_NAME#v}.tar.gz"
+          (cd dist && sha256sum agent-token-*.tar.gz > checksums.txt)
+
+      # A suffixed tag is a pre-release, the same predicate image-release uses for :latest, so the two never disagree.
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          make_latest: ${{ !contains(github.ref_name, '-') }}
+          files: dist/*
+
   # Reports, never gates: an outage there must not withhold the release.
   secobserve:
     needs: image
