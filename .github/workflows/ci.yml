@@ -42,6 +42,23 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: plugins/agent-token/test.sh
+      - run: bash client/test.sh
+      - run: scripts/install-test.sh
+
+  # macOS, where brew users are; audit needs the formula in a tap.
+  formula:
+    runs-on: macos-latest
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: |
+          brew tap-new --no-git local/ci
+          cp Formula/agent-token.rb "$(brew --repository)/Library/Taps/local/homebrew-ci/Formula/"
+          brew style local/ci/agent-token
+          brew audit --strict local/ci/agent-token
+          brew install local/ci/agent-token
+          brew test local/ci/agent-token
 
   # No image ever exists for a commit whose checks failed.
   image:
