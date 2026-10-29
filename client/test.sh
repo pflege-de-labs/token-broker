@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Checks agent-token --permissions against a fake broker. Run: bash client/test.sh (needs jq, python3).
 set -euo pipefail
+# Absolute, because the gh checks run from another directory.
+bin=$(cd "$(dirname "$0")/../plugins/agent-token/bin" && pwd)
 dir=$(mktemp -d)
 pids=()
 trap 'kill "${pids[@]}" 2>/dev/null; rm -rf "$dir"' EXIT
@@ -33,7 +35,7 @@ sleep 1
 export XDG_CACHE_HOME=$dir AGENT_TOKEN_NONINTERACTIVE=1
 mkdir -p "$dir/agent-token"
 echo '{"access_token":"ghu_x","expires_at":4102444800}' >"$dir/agent-token/login.json"
-at() { TOKEN_BROKER_URL=http://127.0.0.1:$1 "$(dirname "$0")/../plugins/agent-token/bin/agent-token" "${@:2}"; }
+at() { TOKEN_BROKER_URL=http://127.0.0.1:$1 "$bin/agent-token" "${@:2}"; }
 cache=$dir/agent-token/repos/acme__app.json
 
 [[ $(at 18081 acme/app) == ghs_fake ]] || fail "token"
@@ -45,10 +47,10 @@ at 18082 --permissions acme/app 2>/dev/null && fail "broker without permissions 
 [[ $(at 18082 acme/app) == ghs_fake ]] || fail "token after broker without permissions"
 # gh wrapper: a fake real gh behind it records what reaches it.
 mkdir -p "$dir/wrap" "$dir/real" "$dir/nogit"
-cp "$(dirname "$0")/../plugins/agent-token/bin/agent-gh" "$dir/wrap/gh"
+cp "$bin/agent-gh" "$dir/wrap/gh"
 printf '#!/bin/sh\necho "real gh $*" >>"%s/real.log"\n' "$dir" >"$dir/real/gh"
 chmod 755 "$dir/wrap/gh" "$dir/real/gh"
-gh() { (cd "$dir/nogit" && PATH="$dir/wrap:$(dirname "$0")/../plugins/agent-token/bin:$dir/real:$PATH" TOKEN_BROKER_URL=http://127.0.0.1:18081 GH_REPO="" command gh "$@"); }
+gh() { (cd "$dir/nogit" && PATH="$dir/wrap:$bin:$dir/real:$PATH" TOKEN_BROKER_URL=http://127.0.0.1:18081 GH_REPO="" command gh "$@"); }
 for sub in login refresh setup-git; do
   gh auth "$sub" 2>/dev/null && fail "gh auth $sub allowed"
 done
