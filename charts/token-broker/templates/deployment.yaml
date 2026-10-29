@@ -79,6 +79,10 @@ spec:
             - name: ACTIONS_ALLOWED_WORKFLOWS
               value: {{ join "," . | quote }}
             {{- end }}
+            {{- with .Values.config.agentPermissions }}
+            - name: AGENT_PERMISSIONS
+              value: {{ $perms := list }}{{ range $k, $v := . }}{{ $perms = append $perms (printf "%s:%s" $k $v) }}{{ end }}{{ join "," $perms | quote }}
+            {{- end }}
             {{- range $k, $v := .Values.extraEnv }}
             - name: {{ $k }}
               value: {{ $v | quote }}

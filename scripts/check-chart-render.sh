@@ -71,6 +71,15 @@ echo "$lists" | grep -A1 "name: ACTIONS_ALLOWED_REFS" | grep -q 'value: "refs/he
 echo "$lists" | grep -A1 "name: ACTIONS_ALLOWED_WORKFLOWS" | grep -q 'value: "acme/wf/.github/workflows/agent.yml@\*"' \
   || fail "allowedWorkflows not rendered as ACTIONS_ALLOWED_WORKFLOWS"
 
+# Agent permissions stay at the broker defaults unless configured, rendered as name:level pairs.
+if echo "$default" | grep -q "AGENT_PERMISSIONS"; then
+  fail "AGENT_PERMISSIONS set without being configured"
+fi
+helm template token-broker "$chart" --values "$chart/ci/default-values.yaml" \
+  --set config.agentPermissions.contents=write --set config.agentPermissions.actions=write \
+  | grep -A1 "name: AGENT_PERMISSIONS" | grep -q 'value: "actions:write,contents:write"' \
+  || fail "agentPermissions not rendered as AGENT_PERMISSIONS"
+
 # Missing credentials must fail the render, not deploy a broker that crashes on start.
 if helm template token-broker "$chart" >/dev/null 2>&1; then
   fail "chart renders without required config"
