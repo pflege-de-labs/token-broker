@@ -41,8 +41,10 @@ jobs:
       # Byte-reproducible: the devcontainer feature pins the sha256, and a re-run re-uploads the tarball.
       - name: Package the client scripts
         run: |
+          sed -i "s/^version=dev /version=${GITHUB_REF_NAME#v} /" plugins/agent-token/bin/agent-token
+          grep -q "^version=${GITHUB_REF_NAME#v} " plugins/agent-token/bin/agent-token
           mkdir dist
-          tar -C client --sort=name --mtime="@$(git log -1 --format=%ct)" --owner=0 --group=0 --numeric-owner -cf - bin \
+          tar -C plugins/agent-token --sort=name --mtime="@$(git log -1 --format=%ct)" --owner=0 --group=0 --numeric-owner -cf - bin \
             | gzip -n > "dist/agent-token-${GITHUB_REF_NAME#v}.tar.gz"
           (cd dist && sha256sum agent-token-*.tar.gz > checksums.txt)
 
@@ -53,6 +55,47 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           make_latest: ${{ !contains(github.ref_name, '-') }}
           files: dist/*
+
+  # As the agent app, so the PR runs CI and needs a human review; same repo, so the OIDC token fits (ADR 15).
+  formula:
+    needs: client
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ${{ vars.AGENT_RUNNER || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - name: Open a PR that bumps the Homebrew formula
+        env:
+          TOKEN_BROKER_URL: ${{ vars.TOKEN_BROKER_URL }}
+        run: |
+          v=${GITHUB_REF_NAME#v}
+          sha=$(curl -fsSL "https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/checksums.txt" |
+            awk -v f="agent-token-$v.tar.gz" '$2 == f { print $1 }')
+          [[ $sha =~ ^[0-9a-f]{64}$ ]]
+          sed -i -E "s#/download/v[^/]+/agent-token-[^/]+\.tar\.gz\"#/download/$GITHUB_REF_NAME/agent-token-$v.tar.gz\"#; s#^  sha256 \"[0-9a-f]{64}\"#  sha256 \"$sha\"#" Formula/agent-token.rb
+          git diff --exit-code --quiet Formula/agent-token.rb && { echo "formula already at $GITHUB_REF_NAME"; exit; }
+          grep -q "agent-token-$v.tar.gz" Formula/agent-token.rb
+
+          oidc=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=token-broker" | jq -r .value)
+          GH_TOKEN=$(curl -fsS "$TOKEN_BROKER_URL" -H "Authorization: Bearer $oidc" \
+            -d "{\"repo\":\"$GITHUB_REPOSITORY\"}" | jq -er .token)
+          echo "::add-mask::$GH_TOKEN"
+          export GH_TOKEN
+          branch=chore/formula-$v
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/heads/$branch" -f sha="$(git rev-parse HEAD)" >/dev/null
+          # The contents API commits as the agent app, and GitHub signs that commit.
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/Formula/agent-token.rb" \
+            -f branch="$branch" -f message="chore(formula): agent-token $v" \
+            -f sha="$(git rev-parse HEAD:Formula/agent-token.rb)" \
+            -f content="$(base64 -w0 Formula/agent-token.rb)" >/dev/null
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+            --title "chore(formula): agent-token $v" \
+            --body "Points the Homebrew formula at the $GITHUB_REF_NAME client tarball. Opened by the release workflow."
 
   # Reports, never gates: an outage there must not withhold the release.
   secobserve:

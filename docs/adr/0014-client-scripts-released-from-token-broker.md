@@ -1,6 +1,6 @@
 # 14. Client scripts released from token-broker
 
-- Status: accepted
+- Status: accepted; location of the scripts amended by ADR 15
 - Date: 2026-10-29
 
 ## Context

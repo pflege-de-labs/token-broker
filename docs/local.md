@@ -7,7 +7,7 @@ host.
 ## Setup
 
 Requirements: `podman`, `curl`, `jq`, `git`, and `agent-token` on your `PATH`: add this repo's
-[`client/bin`](../client/README.md). Build the image once:
+a [release](../client/README.md#on-the-host) (Homebrew or `scripts/install.sh`). Build the image once:
 
 ```sh
 podman build -t localhost/agent-sandbox:latest container/

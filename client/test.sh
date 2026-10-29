@@ -2,7 +2,7 @@
 # Checks agent-token --permissions against a fake broker. Run: bash client/test.sh (needs jq, python3).
 set -euo pipefail
 # Absolute, because the gh checks run from another directory.
-bin=$(cd "$(dirname "$0")/bin" && pwd)
+bin=$(cd "$(dirname "$0")/../plugins/agent-token/bin" && pwd)
 dir=$(mktemp -d)
 pids=()
 trap 'kill "${pids[@]}" 2>/dev/null; rm -rf "$dir"' EXIT

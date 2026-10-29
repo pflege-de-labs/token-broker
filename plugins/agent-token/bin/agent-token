@@ -3,12 +3,15 @@
 #        agent-token --login   — logs in via the login app's device flow (interactive).
 #        agent-token --check   — exits 1 unless a login is cached.
 #        agent-token --permissions org/repo — prints the permissions GitHub granted that token (JSON).
+#        agent-token --version — prints the client version.
 # Logs in once via the login app's device flow and caches that login token.
 # LOGIN_APP_CLIENT_ID overrides the login app the broker names at /login-app.
 # AGENT_TOKEN_NONINTERACTIVE=1 fails instead of starting a device flow nobody would see.
 set -euo pipefail
+version=dev # release.yml stamps the release version
+if [[ ${1:-} == --version ]]; then echo "agent-token $version"; exit; fi
 : "${TOKEN_BROKER_URL:?set TOKEN_BROKER_URL, e.g. https://token-broker.internal}"
-repo="${1:?usage: agent-token org/repo | --login | --check | --permissions org/repo}"
+repo="${1:?usage: agent-token org/repo | --login | --check | --permissions org/repo | --version}"
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/agent-token"
 cache="$cache_dir/login.json"
 

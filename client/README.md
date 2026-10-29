@@ -4,18 +4,21 @@ A coding agent gets short-lived tokens of the agent GitHub App instead of the de
 credentials. Tokens are fetched on demand, per repo, at the moment git, gh or the GitHub MCP server
 need one. Agent tokens live 1h and cover one repo, while sessions run longer and touch several repos.
 
-| Script (`bin/`) | Role |
+The scripts live in the Claude Code plugin, [`plugins/agent-token/bin`](../plugins/agent-token/bin) (ADR 15).
+
+| Script | Role |
 |---|---|
 | `agent-token` | Device-flow login (`--login`), login check (`--check`), token per repo with a cache; `--permissions org/repo` prints what GitHub granted that token |
 | `agent-token-git-credential` | git credential helper for `github.com` |
-| `agent-gh` | Wrapper installed as `gh`; sets `GH_TOKEN` for the target repo |
+| `agent-gh` | `gh` wrapper; sets `GH_TOKEN` for the target repo. Installed as `gh` in containers, as `agent-gh` on the host |
 | `agent-github-mcp` | Starts the local `github-mcp-server` with a token for the current repo (optional) |
 | `agent-commit` | Commits the staged changes through the GitHub API, so GitHub signs them (optional) |
 
 Every `v*` release attaches them as `agent-token-<version>.tar.gz` (`bin/` inside) with a
 `checksums.txt` (ADR 14). The [agent-token devcontainer feature](https://github.com/pflege-de-labs/devcontainer-features#agent-token)
 installs a pinned release; a script change reaches devcontainers with the next release and a
-feature bump.
+feature bump. On the host, the plugin tracks `main`; Homebrew and `scripts/install.sh` install a
+pinned release.
 
 The developer logs in once per 8h with `agent-token --login` in an interactive terminal. All other
 calls set `AGENT_TOKEN_NONINTERACTIVE=1` and fail with `run: agent-token --login` instead of
@@ -25,7 +28,7 @@ Environment: `TOKEN_BROKER_URL` (internal broker URL). The login app's client ID
 broker (`GET /login-app`, token-broker ≥ 0.4.0); `LOGIN_APP_CLIENT_ID` overrides it. The pflege-de
 orgs publish the URL as the Actions variable `AGENT_TOKEN_BROKER_URL` (repo variables override it);
 [`.devcontainer/broker-env.sh`](../.devcontainer/broker-env.sh) reads it on the host and passes it
-into the container.
+into the container. The plugin reads only the org variable ([docs/claude-plugin.md](../docs/claude-plugin.md)).
 
 ## Signed commits
 
@@ -52,12 +55,21 @@ Live test: `client/agent-commit-live.sh org/repo` (needs a login and write acces
 
 ## On the host
 
-Requirements: `bash`, `curl`, `jq`. Put `client/bin` of a checkout (or of a release tarball) on
-your `PATH` (`agent-run` finds `agent-token` there), or call the script directly:
+Requirements: `bash`, `curl`, `jq`. With Claude Code, the plugin brings the scripts
+([docs/claude-plugin.md](../docs/claude-plugin.md)). Otherwise install a release (`agent-run` finds
+`agent-token` on your `PATH`):
 
 ```sh
+brew tap pflege-de-labs/token-broker https://github.com/pflege-de-labs/token-broker
+brew install agent-token
+# or, into ~/.local/bin (PREFIX overrides; pin with `bash -s -- --version vX.Y.Z`):
+curl -fsSL https://raw.githubusercontent.com/pflege-de-labs/token-broker/main/scripts/install.sh | bash
 agent-token my-org/my-repo   # prints a 1h agent token
 ```
+
+Both check the tarball's sha256, install `agent-gh` under that name (installed as `gh`, it would
+also catch your own `gh` calls) and leave your git config alone: the credential helper setup below
+is for containers only.
 
 The login token is cached in `~/.cache/agent-token/login.json` (mode 600) for 8 hours. Without a
 container, deny the agent read access to `~/.ssh`, `~/.config/gh` and `~/.cache/agent-token`.

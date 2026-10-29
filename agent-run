@@ -3,7 +3,7 @@
 # Runs Claude Code in a container that holds only an agent token for one repo, renewed while
 # the session runs. Defaults to the repo of the current checkout. See docs/local.md.
 set -euo pipefail
-command -v agent-token >/dev/null || { echo "agent-run: agent-token not in PATH, see https://github.com/pflege-de-labs/devcontainer-features" >&2; exit 1; }
+command -v agent-token >/dev/null || { echo "agent-run: agent-token not in PATH, see https://pflege-de-labs.github.io/token-broker/docs/getting-started/container/" >&2; exit 1; }
 : "${AGENT_APP_SLUG:?set AGENT_APP_SLUG to the agent GitHub App slug}"
 image=${AGENT_IMAGE:-localhost/agent-sandbox:latest}
 
