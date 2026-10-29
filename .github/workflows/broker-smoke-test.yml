@@ -18,14 +18,14 @@ jobs:
       - name: Get agent token
         id: agent
         env:
-          TOKEN_BROKER_URL: ${{ vars.TOKEN_BROKER_URL }}
+          BROKER: ${{ vars.AGENT_TOKEN_BROKER_ACTIONS_URL }}
         run: |
-          test -n "$TOKEN_BROKER_URL" || { echo "::error::Actions variable TOKEN_BROKER_URL is not set"; exit 1; }
+          test -n "$BROKER" || { echo "::error::Actions variable AGENT_TOKEN_BROKER_ACTIONS_URL is not set"; exit 1; }
           oidc=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=token-broker" | jq -r .value)
           # Claims are not secret; they show which sub format the broker had to accept.
           jq -R 'split(".")[1] | gsub("-"; "+") | gsub("_"; "/") | @base64d | fromjson | {sub, repository, ref, job_workflow_ref}' <<<"$oidc"
-          resp=$(curl -sS -w '\n%{http_code}' "$TOKEN_BROKER_URL" -H "Authorization: Bearer $oidc" \
+          resp=$(curl -sS -w '\n%{http_code}' "$BROKER/token/actions" -H "Authorization: Bearer $oidc" \
             -d "{\"repo\":\"$GITHUB_REPOSITORY\"}")
           status=${resp##*$'\n'}
           body=${resp%$'\n'*}
