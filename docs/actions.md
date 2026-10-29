@@ -5,14 +5,17 @@ which runners can use it:
 
 | Runner | Broker endpoint | Chart |
 |---|---|---|
-| GitHub-hosted | public `POST <public URL>` → `/token/actions` | `actionsRoute` |
+| GitHub-hosted | public `POST <public base URL>/token/actions` | `actionsRoute` |
 | self-hosted with internal network access | internal `POST <internal URL>/token/actions` (or `/token`) | `httpRoute` or the Service |
 
 `/token/actions` accepts Actions OIDC tokens and nothing else, so `actionsRoute` can be public:
 it forwards exactly one path, POST only, and developer logins, probes and metrics stay internal.
 Deployment specifics (URLs, runner labels, variables) live with the deployment, not here.
 
-Workflows pick runner and URL from Actions variables, so one workflow serves both setups:
+Workflows pick runner and broker from Actions variables, so one workflow serves both setups.
+`AGENT_TOKEN_BROKER_ACTIONS_URL` is a base URL (the public one, or the internal one for
+self-hosted runners); the workflow appends `/token/actions`. `AGENT_TOKEN_BROKER_URL` is the
+internal URL for developer machines, not for workflows.
 
 ```yaml
 jobs:
@@ -24,11 +27,11 @@ jobs:
     steps:
       - id: agent
         env:
-          TOKEN_BROKER_URL: ${{ vars.TOKEN_BROKER_URL }}
+          BROKER: ${{ vars.AGENT_TOKEN_BROKER_ACTIONS_URL }}
         run: |
           oidc=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=token-broker" | jq -r .value)
-          token=$(curl -fsS "$TOKEN_BROKER_URL" -H "Authorization: Bearer $oidc" \
+          token=$(curl -fsS "$BROKER/token/actions" -H "Authorization: Bearer $oidc" \
             -d "{\"repo\":\"$GITHUB_REPOSITORY\"}" | jq -r .token)
           echo "::add-mask::$token"
           echo "token=$token" >> "$GITHUB_OUTPUT"

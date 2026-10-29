@@ -38,8 +38,8 @@ my-repo:
     AGENT_TOKEN_BROKER_URL: https://token-broker.staging.example
 ```
 
-They are not `TOKEN_BROKER_URL`: that org variable is the public `/token/actions` endpoint for
-workflows ([actions.md](actions.md)).
+They are not `AGENT_TOKEN_BROKER_ACTIONS_URL`: that org variable is the broker base URL for
+workflows, usually the public route, which serves only `/token/actions` ([actions.md](actions.md)).
 
 Nothing in the container may read variables, so
 [`broker-env.sh`](../.devcontainer/broker-env.sh) runs on the host as `initializeCommand`. It needs

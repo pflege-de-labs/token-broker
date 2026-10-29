@@ -11,7 +11,9 @@
   "separateMinorPatch": false,
   "pruneStaleBranches": true,
   "baseBranchPatterns": [
-    "main"
+    "main",
+    "pages",
+    "/^pages-v/"
   ],
   "configMigration": true,
   "vulnerabilityAlerts": {
@@ -92,6 +94,21 @@
         "major"
       ],
       "automerge": false
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "The docs branches install Hugo by a workflow variable, which the github-actions manager does not read.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "HUGO_VERSION: \"?(?<currentValue>[\\d.]+)\"?"
+      ],
+      "depNameTemplate": "gohugoio/hugo",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ]
 }
