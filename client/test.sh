@@ -39,6 +39,11 @@ at() { TOKEN_BROKER_URL=http://127.0.0.1:$1 "$bin/agent-token" "${@:2}"; }
 cache=$dir/agent-token/repos/acme__app.json
 
 [[ $(at 18081 acme/app) == ghs_fake ]] || fail "token"
+# Rejected before any request, with exit 2 (a broker refusal exits 1).
+for bad in --version-typo -x ../x acme/../x acme; do
+  rc=0; at 18081 "$bad" 2>/dev/null || rc=$?
+  [[ $rc == 2 ]] || fail "bad argument $bad: exit $rc, want 2"
+done
 [[ $(at 18082 --permissions acme/app | jq -c .) == '{"contents":"write","actions":"write"}' ]] || fail "permissions from cache"
 jq '.permissions = null' "$cache" >"$dir/x" && mv "$dir/x" "$cache"
 [[ $(at 18081 --permissions acme/app | jq -r .actions) == write ]] || fail "cache without permissions mints anew"
