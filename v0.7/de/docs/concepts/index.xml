@@ -1,0 +1,136 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Token Broker – Konzepte</title><link>https://pflege-de-labs.github.io/token-broker/v0.7/de/docs/concepts/</link><description>Recent content in Konzepte on Token Broker</description><generator>Hugo -- gohugo.io</generator><language>de-DE</language><atom:link href="https://pflege-de-labs.github.io/token-broker/v0.7/de/docs/concepts/index.xml" rel="self" type="application/rss+xml"/><item><title>Architektur</title><link>https://pflege-de-labs.github.io/token-broker/v0.7/de/docs/concepts/architecture/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/v0.7/de/docs/concepts/architecture/</guid><description>
+&lt;p&gt;Coding-Agenten müssen Code pushen und Pull Requests öffnen. Geben Sie ihnen die Zugangsdaten eines
+Entwicklers, sieht jede Aktion des Agenten nach dem Entwickler aus, und eine Prompt Injection hält
+dann alles, was der Entwickler darf. Token Broker gibt dem Agenten stattdessen eine eigene
+GitHub-Identität: eine GitHub-App. Ihre Commits und Pull Requests erscheinen als &lt;code&gt;&amp;lt;app&amp;gt;[bot]&lt;/code&gt; und
+brauchen ein menschliches Review.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="one-key-one-place"&gt;Ein Schlüssel, ein Ort&lt;span class="hx:absolute hx:-mt-20" id="one-key-one-place"&gt;&lt;/span&gt;
+&lt;a href="#one-key-one-place" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Eine App kann Installation-Tokens nur mit ihrem privaten Schlüssel ausstellen. Der Schlüssel liegt
+allein im Broker. Agenten, Container und Arbeitsplätze bitten den Broker um ein Token und sehen den
+Schlüssel nie.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="two-auth-paths"&gt;Zwei Authentifizierungswege&lt;span class="hx:absolute hx:-mt-20" id="two-auth-paths"&gt;&lt;/span&gt;
+&lt;a href="#two-auth-paths" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Aufrufer&lt;/th&gt;
+&lt;th&gt;Identitätsnachweis&lt;/th&gt;
+&lt;th&gt;Endpunkt&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Entwickler (lokaler Agent)&lt;/td&gt;
+&lt;td&gt;User-Token einer Login-App ohne Berechtigungen, per Device Flow&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;POST /token&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;GitHub-Actions-Workflow&lt;/td&gt;
+&lt;td&gt;das OIDC-Token des Workflows&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;POST /token/actions&lt;/code&gt; (oder &lt;code&gt;/token&lt;/code&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Entwickler.&lt;/strong&gt; &lt;code&gt;agent-token --login&lt;/code&gt; führt den Device Flow von GitHub mit der &lt;strong&gt;Login-App&lt;/strong&gt; aus,
+einer App ganz ohne Berechtigungen. Sie weist nur nach, wer der Entwickler ist. Das Login-Token
+liegt 8 Stunden im Cache des Entwicklers. Der Broker fragt GitHub, ob dieser Benutzer
+Schreibzugriff auf das angeforderte Repository hat, und lehnt sonst ab: Ein Entwickler kann dem
+Agenten nur Repositories übergeben, auf die er selbst pushen könnte.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Workflow.&lt;/strong&gt; Der Workflow fordert ein OIDC-Token mit der vom Broker erwarteten Audience an und
+sendet es an den Broker. Der Broker prüft es gegen den Aussteller von GitHub. Ein Workflow
+bekommt ein Token nur für das Repository, in dem er läuft, optional beschränkt auf bestimmte Refs
+und Workflows. &lt;code&gt;/token/actions&lt;/code&gt; akzeptiert nur diese Tokens, deshalb kann eine öffentliche Route
+ihn weiterleiten, während alles andere intern bleibt.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 data-hextra-search-id="what-the-token-is"&gt;Was das Token ist&lt;span class="hx:absolute hx:-mt-20" id="what-the-token-is"&gt;&lt;/span&gt;
+&lt;a href="#what-the-token-is" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;In beiden Fällen geht der Broker dann so vor:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Er prüft, dass das Repository zu einer der konfigurierten Organisationen gehört.&lt;/li&gt;
+&lt;li&gt;Er signiert ein App-JWT mit dem privaten Schlüssel und sucht die Installation der App auf dem
+Repository; ist die App dort nicht installiert, lehnt er ab.&lt;/li&gt;
+&lt;li&gt;Er stellt ein Installation-Token für genau dieses Repository aus, mit den konfigurierten
+Berechtigungen (Standard: Contents, Pull requests und Issues schreiben, Metadata lesen).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Das Token lebt eine Stunde. Clients holen Tokens bei Bedarf, je Repository, in dem Moment, in dem
+git, &lt;code&gt;gh&lt;/code&gt; oder der GitHub-MCP-Server eines brauchen, und halten sie im Cache. Jedes ausgestellte
+oder abgelehnte Token wird protokolliert: wer, welches Repository, warum.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="parts"&gt;Bestandteile&lt;span class="hx:absolute hx:-mt-20" id="parts"&gt;&lt;/span&gt;
+&lt;a href="#parts" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Broker:&lt;/strong&gt; ein kleiner zustandsloser Go-Dienst, betrieben als Helm-Chart mit zwei Replikaten. Er
+hat keine Datenbank und ruft nie die Kubernetes-API auf.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Client-Skripte:&lt;/strong&gt; &lt;code&gt;agent-token&lt;/code&gt; und die darauf aufbauenden Helfer. Siehe
+&lt;a href="../../reference/client-cli/"&gt;Client-Befehle&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Claude-Code-Plugin, Dev Container Feature und &lt;code&gt;agent-run&lt;/code&gt;:&lt;/strong&gt; drei Wege, den Client in die
+Umgebung des Agenten zu bringen. Siehe &lt;a href="../../getting-started/"&gt;Erste Schritte&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Einrichtung: &lt;a href="../../guides/github-apps/"&gt;GitHub-Apps einrichten&lt;/a&gt;. Endpunkte und Fehler:
+&lt;a href="../../reference/endpoints/"&gt;Endpunkte&lt;/a&gt;.&lt;/p&gt;</description></item><item><title>Sicherheitsmodell</title><link>https://pflege-de-labs.github.io/token-broker/v0.7/de/docs/concepts/security-model/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/v0.7/de/docs/concepts/security-model/</guid><description>
+&lt;h2 data-hextra-search-id="what-the-agent-never-sees"&gt;Was der Agent nie sieht&lt;span class="hx:absolute hx:-mt-20" id="what-the-agent-never-sees"&gt;&lt;/span&gt;
+&lt;a href="#what-the-agent-never-sees" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;Den privaten Schlüssel der Agent-App und das Client-Secret der Login-App. Sie existieren nur im
+Broker.&lt;/li&gt;
+&lt;li&gt;Die eigenen Zugangsdaten des Entwicklers. Commits und API-Aufrufe des Agenten nutzen
+Agent-Tokens, sie können also nicht als der Entwickler handeln.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Ein Agent-Token ist auf ein Repository beschränkt, lebt eine Stunde und trägt nur die
+konfigurierten Berechtigungen. Abgesehen von Metadata sind das standardmäßig Contents, Pull
+requests und Issues. Es hat keine Berechtigungen für Workflows, Administration, Secrets oder
+Statuses, kann also weder die CI ändern noch das Repository verwalten noch einen erforderlichen
+Check als grün melden.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="humans-stay-in-the-loop"&gt;Menschen bleiben beteiligt&lt;span class="hx:absolute hx:-mt-20" id="humans-stay-in-the-loop"&gt;&lt;/span&gt;
+&lt;a href="#humans-stay-in-the-loop" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Die Agent-App kann Pull Requests freigeben, und mit Schreibrechten auf Inhalte würden ihre
+Freigaben auf erforderliche Reviews angerechnet. Jedes Repository, auf dem sie installiert ist,
+muss deshalb ein Code-Owner-Review verlangen und eine &lt;code&gt;CODEOWNERS&lt;/code&gt;-Datei haben, die menschliche
+Teams nennt: Bots können keine Code Owner sein. Siehe
+&lt;a href="../../guides/review-rules/"&gt;Review-Regeln setzen&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;Das Plugin ist eine Leitplanke, keine Sandbox&lt;span class="hx:absolute hx:-mt-20" id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;&lt;/span&gt;
+&lt;a href="#the-plugin-is-a-guardrail-not-a-sandbox" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Das Claude-Code-Plugin weist Claude an, Agent-Tokens zu nutzen, und blockiert &lt;code&gt;git commit&lt;/code&gt;,
+&lt;code&gt;git push&lt;/code&gt; und ein bloßes &lt;code&gt;gh&lt;/code&gt;, indem es Befehlstext vergleicht. Ein Befehl wie &lt;code&gt;env git push&lt;/code&gt;,
+&lt;code&gt;/usr/bin/git push&lt;/code&gt; oder ein Skript, das pusht, kommt durch und nutzt die Zugangsdaten des
+Entwicklers. Die Sperre folgt außerdem der Sitzung, nicht dem Verzeichnis: Nach einem &lt;code&gt;cd&lt;/code&gt; in ein
+anderes Repository gilt sie weiter, und eine Sitzung, die außerhalb eines agent-token-Repositorys
+gestartet wurde, bleibt ungeschützt.&lt;/p&gt;
+&lt;p&gt;Repository-Admins können Topics von Hand ändern. Ein falsches Topic kostet einen fehlgeschlagenen
+Aufruf und sonst nichts, weil der Broker Tokens dort ablehnt, wo die App nicht installiert ist.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="host-versus-container"&gt;Rechner versus Container&lt;span class="hx:absolute hx:-mt-20" id="host-versus-container"&gt;&lt;/span&gt;
+&lt;a href="#host-versus-container" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;th&gt;Rechner mit Plugin&lt;/th&gt;
+&lt;th&gt;Container oder Dev Container&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Zugangsdaten des Entwicklers (&lt;code&gt;~/.ssh&lt;/code&gt;, &lt;code&gt;gh&lt;/code&gt;-Login)&lt;/td&gt;
+&lt;td&gt;für den Agenten erreichbar&lt;/td&gt;
+&lt;td&gt;nicht eingebunden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Durchsetzung&lt;/td&gt;
+&lt;td&gt;Guard auf Befehlstext&lt;/td&gt;
+&lt;td&gt;der Inhalt des Containers&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Netzwerk&lt;/td&gt;
+&lt;td&gt;unbeschränkt&lt;/td&gt;
+&lt;td&gt;Dev Container: Egress-Firewall mit Positivliste&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Auf dem Rechner verweigern Sie dem Agenten den Lesezugriff auf &lt;code&gt;~/.ssh&lt;/code&gt;, &lt;code&gt;~/.config/gh&lt;/code&gt; und
+&lt;code&gt;~/.cache/agent-token&lt;/code&gt;. Für Isolation betreiben Sie den Agenten mit
+&lt;a href="../../getting-started/container/"&gt;&lt;code&gt;agent-run&lt;/code&gt;&lt;/a&gt; oder im
+&lt;a href="../../getting-started/devcontainer/"&gt;Dev Container&lt;/a&gt;. Die Firewall des Dev Containers kann der
+Agent nicht aufheben, aber Ihr weitergeleiteter SSH-Agent kann noch signieren; für volle Isolation
+nutzen Sie &lt;code&gt;agent-run&lt;/code&gt;. Die Rückfragen von Claude zu überspringen ist nur mit aktiver Firewall
+vertretbar.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="exposure-of-the-broker"&gt;Erreichbarkeit des Brokers&lt;span class="hx:absolute hx:-mt-20" id="exposure-of-the-broker"&gt;&lt;/span&gt;
+&lt;a href="#exposure-of-the-broker" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Die Client-ID des Device Flows ist öffentlich, ein erreichbarer Broker lädt daher zu Phishing ein.
+Halten Sie &lt;code&gt;/token&lt;/code&gt; intern. Nur &lt;code&gt;/token/actions&lt;/code&gt; ist für die öffentliche Erreichbarkeit gebaut: Es
+akzeptiert Actions-OIDC-Tokens und sonst nichts. GitHub ruft den Broker nie auf; er braucht
+ausgehenden Zugriff nur auf &lt;code&gt;api.github.com&lt;/code&gt; und &lt;code&gt;token.actions.githubusercontent.com&lt;/code&gt;. Betreiben
+Sie ihn hinter TLS.&lt;/p&gt;
+&lt;p&gt;Grenzen: Commits mit lokalem git sind unsigniert, nutzen Sie daher auf Branches, die Signaturen
+verlangen, &lt;a href="../../guides/signed-commits/"&gt;&lt;code&gt;agent-commit&lt;/code&gt;&lt;/a&gt; oder Squash-Merge.&lt;/p&gt;</description></item></channel></rss>
