@@ -2,8 +2,8 @@
 class AgentToken < Formula
   desc "Short-lived GitHub App tokens for coding agents, from token-broker"
   homepage "https://pflege-de-labs.github.io/token-broker/"
-  url "https://github.com/pflege-de-labs/token-broker/releases/download/v0.6.0/agent-token-0.6.0.tar.gz"
-  sha256 "44717fc267594148b8d4f9722b30e636fe4fad32f2a2aa1fdd6ba64cfd2ca377"
+  url "https://github.com/pflege-de-labs/token-broker/releases/download/v0.7.0/agent-token-0.7.0.tar.gz"
+  sha256 "2ce3a9e1ffc779e0d8e7baa1360cd4e6baec9d60be6a25d68db0026a535cd3ef"
 
   depends_on "gh"
   depends_on "jq"
