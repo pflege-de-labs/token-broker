@@ -142,7 +142,7 @@ data-copied-label="Kopiert!"
 &lt;h2 data-hextra-search-id="pin-a-version"&gt;Version festlegen&lt;span class="hx:absolute hx:-mt-20" id="pin-a-version"&gt;&lt;/span&gt;
 &lt;a href="#pin-a-version" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
 &lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;curl -fsSL https://raw.githubusercontent.com/pflege-de-labs/token-broker/main/scripts/install.sh &lt;span class="se"&gt;\
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;|&lt;/span&gt; bash -s -- --version v0.6.0&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;|&lt;/span&gt; bash -s -- --version v0.7.0&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
 &lt;button
 class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
 title="Code kopieren"
@@ -283,6 +283,43 @@ Broker-Host.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Beim ersten Verbinden zeigt das Terminal einen Device-Code; melden Sie sich dort an. Mit Podman
 setzen Sie &lt;code&gt;&amp;quot;dev.containers.dockerPath&amp;quot;: &amp;quot;podman&amp;quot;&lt;/code&gt; in Ihren VS-Code-Einstellungen.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="choose-the-client-release"&gt;Client-Release wählen&lt;span class="hx:absolute hx:-mt-20" id="choose-the-client-release"&gt;&lt;/span&gt;
+&lt;a href="#choose-the-client-release" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Das Feature installiert das Release, auf das es festgelegt ist, und prüft den Download gegen eine
+in devcontainer-features geprüfte sha256. Für ein anderes Release setzen Sie die Option &lt;code&gt;version&lt;/code&gt;
+des Features:&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-jsonc" data-lang="jsonc"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="s2"&gt;&amp;#34;features&amp;#34;&lt;/span&gt;&lt;span class="err"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="nt"&gt;&amp;#34;ghcr.io/pflege-de-labs/devcontainer-features/agent-token:1&amp;#34;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="nt"&gt;&amp;#34;version&amp;#34;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;0.7.0&amp;#34;&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Option&lt;/th&gt;
+&lt;th&gt;Standard&lt;/th&gt;
+&lt;th&gt;Beschreibung&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;version&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;leer: das festgelegte Release&lt;/td&gt;
+&lt;td&gt;Ein token-broker-Release, z. B. &lt;code&gt;0.7.0&lt;/code&gt;. Wird nur gegen die &lt;code&gt;checksums.txt&lt;/code&gt; dieses Releases geprüft.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Ein neues Client-Release wird mit einer neuen Feature-Version zum Standard. Bauen Sie den
+Devcontainer neu, um es zu übernehmen.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="broker-url-and-login-app"&gt;Broker-URL und Login-App&lt;span class="hx:absolute hx:-mt-20" id="broker-url-and-login-app"&gt;&lt;/span&gt;
 &lt;a href="#broker-url-and-login-app" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Zwei Actions-Variablen liefern die Broker-URL und die Client-ID der Login-App, nicht das
 Repository:&lt;/p&gt;
