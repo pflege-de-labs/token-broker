@@ -27,6 +27,8 @@ layout: hextra-home
 {{< hextra/hero-button text="Loslegen" link="docs/getting-started" >}}
 </div>
 
+<div class="content">
+
 ## Funktionen {#features}
 
 {{< cards >}}
@@ -76,3 +78,5 @@ layout: hextra-home
 
 Ein Token wird nur ausgestellt, wenn der Entwickler Schreibzugriff auf das Repository hat oder die
 Claims `repository` und `sub` des OIDC-Tokens es nennen, und die Agent-App dort installiert ist.
+
+</div>
