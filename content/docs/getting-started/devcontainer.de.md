@@ -21,6 +21,25 @@ token-broker-Repositorys ist ein funktionierendes Setup zum Kopieren. Es:
 Beim ersten Verbinden zeigt das Terminal einen Device-Code; melden Sie sich dort an. Mit Podman
 setzen Sie `"dev.containers.dockerPath": "podman"` in Ihren VS-Code-Einstellungen.
 
+## Client-Release wählen {#choose-the-client-release}
+
+Das Feature installiert das Release, auf das es festgelegt ist, und prüft den Download gegen eine
+in devcontainer-features geprüfte sha256. Für ein anderes Release setzen Sie die Option `version`
+des Features:
+
+```jsonc
+"features": {
+  "ghcr.io/pflege-de-labs/devcontainer-features/agent-token:1": { "version": "0.7.0" }
+}
+```
+
+| Option | Standard | Beschreibung |
+| --- | --- | --- |
+| `version` | leer: das festgelegte Release | Ein token-broker-Release, z. B. `0.7.0`. Wird nur gegen die `checksums.txt` dieses Releases geprüft. |
+
+Ein neues Client-Release wird mit einer neuen Feature-Version zum Standard. Bauen Sie den
+Devcontainer neu, um es zu übernehmen.
+
 ## Broker-URL und Login-App {#broker-url-and-login-app}
 
 Zwei Actions-Variablen liefern die Broker-URL und die Client-ID der Login-App, nicht das

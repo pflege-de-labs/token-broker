@@ -19,6 +19,24 @@ working setup to copy. It:
 On first attach the terminal shows a device code; log in there. With Podman, set
 `"dev.containers.dockerPath": "podman"` in your VS Code settings.
 
+## Choose the client release
+
+The Feature installs the client release it pins and checks the download against a sha256 reviewed
+in devcontainer-features. To install another release, set the Feature's `version` option:
+
+```jsonc
+"features": {
+  "ghcr.io/pflege-de-labs/devcontainer-features/agent-token:1": { "version": "0.7.0" }
+}
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `version` | empty: the pinned release | A token-broker release, e.g. `0.7.0`. Checked only against that release's `checksums.txt`. |
+
+A new client release becomes the default with a new Feature version. Rebuild the devcontainer to
+pick it up.
+
 ## Broker URL and login app
 
 Two Actions variables supply the broker URL and the login app client ID, not the repository:
