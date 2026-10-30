@@ -23,7 +23,7 @@ Make sure `$PREFIX/bin` is on your `PATH`.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/pflege-de-labs/token-broker/main/scripts/install.sh \
-  | bash -s -- --version v0.6.0
+  | bash -s -- --version v0.7.0
 ```
 
 ## Choose the install directory
