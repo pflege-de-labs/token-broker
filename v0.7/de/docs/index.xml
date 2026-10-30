@@ -575,9 +575,11 @@ und als &lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt; und &lt;code&gt;LOGIN_APP_CLIE
 &lt;li&gt;Alles andere: Setzen Sie &lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt; selbst.&lt;/li&gt;
 &lt;/ul&gt;</description></item><item><title>Homebrew</title><link>https://pflege-de-labs.github.io/token-broker/v0.7/de/docs/getting-started/homebrew/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/v0.7/de/docs/getting-started/homebrew/</guid><description>
 &lt;p&gt;Installieren Sie die Client-Skripte unter macOS oder Linux mit Homebrew. Die Formel hängt von &lt;code&gt;jq&lt;/code&gt;
-und &lt;code&gt;gh&lt;/code&gt; ab.&lt;/p&gt;
+und &lt;code&gt;gh&lt;/code&gt; ab. Formeln aus einem Tap eines Drittanbieters lädt Homebrew erst, nachdem Sie ihm mit
+&lt;code&gt;brew trust&lt;/code&gt; vertrauen.&lt;/p&gt;
 &lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
 &lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;brew tap pflege-de-labs/token-broker https://github.com/pflege-de-labs/token-broker
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;brew trust --tap pflege-de-labs/token-broker
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;brew install agent-token&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
 &lt;button
 class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
