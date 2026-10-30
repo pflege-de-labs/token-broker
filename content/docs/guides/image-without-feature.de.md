@@ -42,7 +42,7 @@ Prüfen Sie den Tarball gegen sein sha256 aus der `checksums.txt` des Releases:
 FROM docker.io/library/debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends bash ca-certificates curl git gh jq \
  && rm -rf /var/lib/apt/lists/*
-ARG AGENT_TOKEN_VERSION=<release, e.g. 0.6.0>
+ARG AGENT_TOKEN_VERSION=<release, e.g. 0.7.0>
 ARG AGENT_TOKEN_SHA256=<its sha256>
 RUN curl -fsSL -o /tmp/agent-token.tgz \
       "https://github.com/pflege-de-labs/token-broker/releases/download/v$AGENT_TOKEN_VERSION/agent-token-$AGENT_TOKEN_VERSION.tar.gz" \
