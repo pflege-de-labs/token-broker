@@ -61,6 +61,7 @@ Requirements: `bash`, `curl`, `jq`. With Claude Code, the plugin brings the scri
 
 ```sh
 brew tap pflege-de-labs/token-broker https://github.com/pflege-de-labs/token-broker
+brew trust --tap pflege-de-labs/token-broker   # Homebrew loads third-party taps only once trusted
 brew install agent-token
 # or, into ~/.local/bin (PREFIX overrides; pin with `bash -s -- --version vX.Y.Z`):
 curl -fsSL https://raw.githubusercontent.com/pflege-de-labs/token-broker/main/scripts/install.sh | bash
