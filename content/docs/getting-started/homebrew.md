@@ -4,9 +4,11 @@ weight: 2
 ---
 
 Install the client scripts on macOS or Linux with Homebrew. The formula depends on `jq` and `gh`.
+Homebrew loads formulae from a third-party tap only after you trust it with `brew trust`.
 
 ```sh
 brew tap pflege-de-labs/token-broker https://github.com/pflege-de-labs/token-broker
+brew trust --tap pflege-de-labs/token-broker
 brew install agent-token
 ```
 

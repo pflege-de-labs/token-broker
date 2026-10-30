@@ -4,10 +4,12 @@ weight: 2
 ---
 
 Installieren Sie die Client-Skripte unter macOS oder Linux mit Homebrew. Die Formel hängt von `jq`
-und `gh` ab.
+und `gh` ab. Formeln aus einem Tap eines Drittanbieters lädt Homebrew erst, nachdem Sie ihm mit
+`brew trust` vertrauen.
 
 ```sh
 brew tap pflege-de-labs/token-broker https://github.com/pflege-de-labs/token-broker
+brew trust --tap pflege-de-labs/token-broker
 brew install agent-token
 ```
 
