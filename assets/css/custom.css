@@ -15,3 +15,8 @@
   background: #451a03;
   color: #fde68a;
 }
+
+/* Hextra pushes card text to the bottom (mt-auto, meant for image cards); top-align it so cards in one row line up. */
+.hextra-card > .hx\:mt-auto {
+  margin-top: 0;
+}

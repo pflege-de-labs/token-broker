@@ -26,6 +26,8 @@ layout: hextra-home
 {{< hextra/hero-button text="Get started" link="docs/getting-started" >}}
 </div>
 
+<div class="content">
+
 ## Features
 
 {{< cards >}}
@@ -75,3 +77,5 @@ layout: hextra-home
 
 A token is issued only if the developer has write access to the repository, or the OIDC token's
 `repository` and `sub` claims name it, and the agent app is installed there.
+
+</div>
