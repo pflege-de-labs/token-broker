@@ -52,6 +52,10 @@ In such a session a `PreToolUse` hook blocks Bash commands that contain `git com
 `git push`, and a bare `gh` where `agent-gh` exists. Claude uses [`agent-commit`](../../guides/signed-commits/)
 and `agent-gh` instead.
 
+The check also runs later: before a `git commit`, `git push` or `gh` command in an unguarded
+session, the guard checks the repository the command targets. A session started before the app was
+installed, or in a parent directory, is guarded from that command on.
+
 {{< callout type="warning" >}}
 The plugin is a guardrail, not a sandbox. The hook matches command text, so `env git push` or a
 script that pushes get through with your credentials. For isolation use the
