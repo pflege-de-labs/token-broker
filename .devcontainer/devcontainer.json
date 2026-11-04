@@ -4,8 +4,8 @@
   "name": "token-broker",
   "build": { "dockerfile": "Dockerfile" },
   "features": {
-    // agent-token 1.3.0: client scripts of token-broker release 0.7.0, gh wrapper and git credential config, root-owned.
-    "ghcr.io/pflege-de-labs/devcontainer-features/agent-token@sha256:c10a13bd5b53dffe720c3aeab7dc79abfb145f0b3af7df000a7be170d940af5f": {}
+    // agent-token 1.4.0: client scripts of token-broker release 0.8.0, gh wrapper and git credential config, root-owned.
+    "ghcr.io/pflege-de-labs/devcontainer-features/agent-token@sha256:4083dc1b5bfb8d741f9c4c4c1ced6e44fb8552b25a6d7d7dbf6964fdd581751a": {}
   },
   // Broker URL and login app from the Actions variables, read with the host's gh.
   "initializeCommand": ".devcontainer/broker-env.sh",
