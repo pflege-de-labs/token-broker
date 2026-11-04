@@ -52,6 +52,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: |
           brew tap-new --no-git local/ci
+          # Homebrew 7 refuses formulae from untrusted taps.
+          brew trust local/ci
           cp Formula/agent-token.rb "$(brew --repository)/Library/Taps/local/homebrew-ci/Formula/"
           brew style local/ci/agent-token
           brew audit --strict local/ci/agent-token
