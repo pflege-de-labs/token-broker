@@ -8,6 +8,8 @@ human review, and developer credentials never reach the agent.
 ## Features
 
 - **Narrow tokens:** one repository, one hour, contents, pull request and issue access only.
+- **Opt-in scopes** for editing workflows or running them, never both in one token, after a
+  fresh login ([docs/scopes.md](docs/scopes.md)).
 - **Developer login via device flow** with a permission-less login app; a token only for repos
   the developer has write access to.
 - **GitHub Actions via OIDC:** `POST /token/actions`, safe to expose publicly, with optional
@@ -104,6 +106,8 @@ only; GitHub never calls it. Run it behind TLS.
 | `ACTIONS_OIDC_ISSUER` | default `https://token.actions.githubusercontent.com` |
 | `ACTIONS_ALLOWED_REFS`, `ACTIONS_ALLOWED_WORKFLOWS` | optional allowlists, comma-separated globs |
 | `AGENT_PERMISSIONS` | agent token permissions as `name:level,...`; default `contents:write,pull_requests:write,issues:write,metadata:read` |
+| `AGENT_SCOPES` | opt-in scopes clients may request: `workflows`, `actions` ([docs/scopes.md](docs/scopes.md)) |
+| `ACTIONS_SCOPE_WORKFLOWS` | `job_workflow_ref` globs of workflows that may request a scope; empty allows none |
 | `LISTEN_ADDR`, `GITHUB_API_URL` | defaults `:8080`, `https://api.github.com` |
 
 Endpoints besides `/token` and `/token/actions`: `/login-app` (`{"client_id": ...}` for the

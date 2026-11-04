@@ -58,3 +58,9 @@ config:
 
 A request must match one pattern of each configured list. Empty lists apply no restriction.
 Pull request runs carry `ref: refs/pull/<n>/merge`, so `allowedRefs` without `refs/pull/*` blocks agents on PRs.
+
+## Scopes
+
+A workflow gets the `workflows` or `actions` [scope](scopes.md) with `"scope":"workflows"` in the
+request body, only if the deployment enables it and the workflow's `job_workflow_ref` matches
+`config.actionsOidc.scopeWorkflows`. That list is empty by default, so no workflow gets one.

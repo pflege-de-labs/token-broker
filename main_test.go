@@ -60,8 +60,13 @@ func actionsTokenWith(t *testing.T, overrides map[string]any) string {
 	return signJWT(t, claims)
 }
 
-// minted holds the last agent token request body sent to the fake GitHub.
 func newTestBroker(t *testing.T) (*broker, *map[string]any) {
+	t.Helper()
+	return newTestBrokerWith(t, func(*config) {})
+}
+
+// minted holds the last agent token request body sent to the fake GitHub; edit adjusts the config.
+func newTestBrokerWith(t *testing.T, edit func(*config)) (*broker, *map[string]any) {
 	t.Helper()
 	var minted map[string]any
 	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -73,12 +78,20 @@ func newTestBroker(t *testing.T) (*broker, *map[string]any) {
 				AccessToken string `json:"access_token"`
 			}
 			_ = json.NewDecoder(r.Body).Decode(&in)
-			users := map[string]string{"ghu_dev": "dev", "ghu_reader": "reader"}
+			users := map[string]string{"ghu_dev": "dev", "ghu_reader": "reader", "ghu_fresh": "dev", "ghu_noexp": "dev"}
 			if id != "login-client" || secret != "s3cret" || users[in.AccessToken] == "" {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
-			_, _ = w.Write([]byte(`{"user":{"login":"` + users[in.AccessToken] + `"}}`))
+			// ghu_dev was issued two hours ago (8h lifetime), the others a minute ago; ghu_noexp never expires.
+			var expires any = time.Now().Add(8*time.Hour - time.Minute).UTC().Format(time.RFC3339)
+			switch in.AccessToken {
+			case "ghu_dev":
+				expires = time.Now().Add(6 * time.Hour).UTC().Format(time.RFC3339)
+			case "ghu_noexp":
+				expires = nil
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"user": map[string]string{"login": users[in.AccessToken]}, "expires_at": expires})
 		case r.URL.Path == "/repos/acme/app/installation" && strings.HasPrefix(auth, "Bearer "):
 			_, _ = w.Write([]byte(`{"id":42}`))
 		case r.URL.Path == "/app/installations/42/access_tokens" && r.Method == http.MethodPost:
@@ -103,6 +116,7 @@ func newTestBroker(t *testing.T) (*broker, *map[string]any) {
 	keys := &oidc.StaticKeySet{PublicKeys: []crypto.PublicKey{&testKey.PublicKey}}
 	actions := oidc.NewVerifier(testIssuer, keys, &oidc.Config{ClientID: "token-broker"})
 	cfg := config{appID: "1", key: testKey, orgs: []string{"acme"}, apiURL: gh.URL, loginID: "login-client", loginSecret: "s3cret"}
+	edit(&cfg)
 	b, err := newBroker(cfg, actions, noop.NewMeterProvider().Meter(""))
 	if err != nil {
 		t.Fatal(err)
@@ -266,14 +280,102 @@ func TestSplitList(t *testing.T) {
 }
 
 func TestConfiguredPermissions(t *testing.T) {
-	b, minted := newTestBroker(t)
-	b.cfg.permissions = map[string]string{"contents": "write", "actions": "write"}
+	b, minted := newTestBrokerWith(t, func(c *config) { c.permissions = map[string]string{"contents": "write", "actions": "write"} })
 	req := httptest.NewRequest(http.MethodPost, "/token", strings.NewReader(`{"repo":"acme/app"}`))
 	req.Header.Set("Authorization", "Bearer ghu_dev")
 	rec := httptest.NewRecorder()
 	b.handleToken(rec, req)
 	if perms, _ := (*minted)["permissions"].(map[string]any); rec.Code != http.StatusOK || len(perms) != 2 || perms["actions"] != "write" {
 		t.Errorf("status %d, permissions %v", rec.Code, perms)
+	}
+}
+
+func TestScopes(t *testing.T) {
+	const wf = "acme/app/.github/workflows/agent.yml@refs/heads/main"
+	actions := func(jobWorkflowRef string) string {
+		return actionsTokenWith(t, map[string]any{"job_workflow_ref": jobWorkflowRef})
+	}
+	tests := []struct {
+		name, bearer, scope string
+		enabled, workflows  []string // AGENT_SCOPES, ACTIONS_SCOPE_WORKFLOWS
+		want                int
+		grants, absent      string // permission granted at write level, permission not granted
+	}{
+		{"no scope is default", "ghu_dev", "", []string{"workflows", "actions"}, nil, http.StatusOK, "contents", "workflows"},
+		{"explicit default", "ghu_dev", "default", nil, nil, http.StatusOK, "contents", "actions"},
+		{"workflows with fresh login", "ghu_fresh", "workflows", []string{"workflows", "actions"}, nil, http.StatusOK, "workflows", "actions"},
+		{"actions with fresh login", "ghu_fresh", "actions", []string{"workflows", "actions"}, nil, http.StatusOK, "actions", "workflows"},
+		{"workflows with old login", "ghu_dev", "workflows", []string{"workflows"}, nil, http.StatusForbidden, "", ""},
+		{"workflows with non-expiring login", "ghu_noexp", "workflows", []string{"workflows"}, nil, http.StatusForbidden, "", ""},
+		{"workflows without push access", "ghu_reader", "workflows", []string{"workflows"}, nil, http.StatusForbidden, "", ""},
+		{"scope not enabled", "ghu_fresh", "workflows", []string{"actions"}, nil, http.StatusBadRequest, "", ""},
+		{"unknown scope", "ghu_fresh", "admin", []string{"workflows"}, nil, http.StatusBadRequest, "", ""},
+		{"actions default scope", actions(wf), "", []string{"workflows"}, nil, http.StatusOK, "contents", "workflows"},
+		{"actions scope without allowlist", actions(wf), "workflows", []string{"workflows"}, nil, http.StatusForbidden, "", ""},
+		{"actions scope allowed workflow", actions(wf), "workflows", []string{"workflows"}, []string{"acme/app/.github/workflows/agent.yml@refs/heads/main"}, http.StatusOK, "workflows", "actions"},
+		{"actions scope other workflow", actions("acme/app/.github/workflows/x.yml@refs/heads/feat"), "workflows", []string{"workflows"}, []string{wf}, http.StatusForbidden, "", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, minted := newTestBrokerWith(t, func(c *config) { c.scopes, c.scopeWorkflows = tt.enabled, tt.workflows })
+			body := `{"repo":"acme/app"}`
+			if tt.scope != "" {
+				body = `{"repo":"acme/app","scope":"` + tt.scope + `"}`
+			}
+			req := httptest.NewRequest(http.MethodPost, "/token", strings.NewReader(body))
+			req.Header.Set("Authorization", "Bearer "+tt.bearer)
+			rec := httptest.NewRecorder()
+			b.handleToken(rec, req)
+			if rec.Code != tt.want {
+				t.Fatalf("status = %d, want %d: %s", rec.Code, tt.want, rec.Body)
+			}
+			if tt.want != http.StatusOK {
+				if *minted != nil {
+					t.Errorf("agent token minted on denied request")
+				}
+				return
+			}
+			perms, _ := (*minted)["permissions"].(map[string]any)
+			if perms[tt.grants] != "write" || perms[tt.absent] != nil || perms["contents"] != "write" {
+				t.Errorf("permissions = %v, want %s:write without %s", perms, tt.grants, tt.absent)
+			}
+		})
+	}
+}
+
+func TestStaleLoginHint(t *testing.T) {
+	b, _ := newTestBrokerWith(t, func(c *config) { c.scopes = []string{"workflows"} })
+	req := httptest.NewRequest(http.MethodPost, "/token", strings.NewReader(`{"repo":"acme/app","scope":"workflows"}`))
+	req.Header.Set("Authorization", "Bearer ghu_dev")
+	rec := httptest.NewRecorder()
+	b.handleToken(rec, req)
+	if !strings.Contains(rec.Body.String(), "agent-token --login") {
+		t.Errorf("denial does not tell the user to log in again: %s", rec.Body)
+	}
+}
+
+func TestScopeConfig(t *testing.T) {
+	tests := []struct {
+		name    string
+		perms   map[string]string
+		enabled []string
+		ok      bool
+	}{
+		{"defaults with both scopes", nil, []string{"workflows", "actions"}, true},
+		{"unknown scope", nil, []string{"admin"}, false},
+		{"actions:write in default, workflows enabled", map[string]string{"contents": "write", "actions": "write"}, []string{"workflows"}, false},
+		{"actions:write in default, no scopes", map[string]string{"contents": "write", "actions": "write"}, nil, true},
+		{"actions:read in default, workflows enabled", map[string]string{"contents": "write", "actions": "read"}, []string{"workflows"}, true},
+		{"workflows in default, actions enabled", map[string]string{"contents": "write", "workflows": "write"}, []string{"actions"}, false},
+		{"workflows and actions:write in default", map[string]string{"workflows": "write", "actions": "write"}, nil, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config{permissions: tt.perms, scopes: tt.enabled}
+			if _, err := newBroker(cfg, nil, noop.NewMeterProvider().Meter("")); (err == nil) != tt.ok {
+				t.Errorf("newBroker error = %v, want ok %v", err, tt.ok)
+			}
+		})
 	}
 }
 

@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"crypto"
 	"crypto/rand"
@@ -17,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"os"
 	"os/signal"
@@ -42,6 +44,18 @@ var agentPermissions = map[string]string{
 	"metadata":      "read",
 }
 
+// Opt-in scopes (AGENT_SCOPES): the default set plus one permission each (ADR 16).
+var scopeExtras = map[string][2]string{
+	"workflows": {"workflows", "write"},
+	"actions":   {"actions", "write"},
+}
+
+// An elevated scope needs a login at most this old, so a human approved it moments ago.
+const stepUpWindow = 10 * time.Minute
+
+// shortcut: assumes GitHub's fixed 8h user-token lifetime; revisit if check-token exposes a per-token issue time.
+const userTokenLifetime = 8 * time.Hour
+
 // Set by the image build via -ldflags.
 var version = "dev"
 
@@ -61,10 +75,13 @@ type config struct {
 	allowedRefs      []string
 	allowedWorkflows []string
 	permissions      map[string]string // agent token permissions; nil uses agentPermissions
+	scopes           []string          // AGENT_SCOPES: enabled names from scopeExtras
+	scopeWorkflows   []string          // ACTIONS_SCOPE_WORKFLOWS: job_workflow_ref globs that may request a scope; empty allows none
 }
 
 type broker struct {
 	cfg      config
+	profiles map[string]map[string]string // scope name → token permissions
 	client   *http.Client
 	actions  *oidc.IDTokenVerifier
 	requests metric.Int64Counter
@@ -109,6 +126,8 @@ func run() error {
 		allowedRefs:      splitList(os.Getenv("ACTIONS_ALLOWED_REFS")),
 		allowedWorkflows: splitList(os.Getenv("ACTIONS_ALLOWED_WORKFLOWS")),
 		permissions:      perms,
+		scopes:           splitList(os.Getenv("AGENT_SCOPES")),
+		scopeWorkflows:   splitList(os.Getenv("ACTIONS_SCOPE_WORKFLOWS")),
 	}
 	if cfg.appID == "" || len(cfg.orgs) == 0 || cfg.loginID == "" || cfg.loginSecret == "" {
 		return errors.New("GITHUB_APP_ID, GITHUB_ORG, LOGIN_APP_CLIENT_ID and LOGIN_APP_CLIENT_SECRET are required")
@@ -157,6 +176,22 @@ func newBroker(cfg config, actions *oidc.IDTokenVerifier, meter metric.Meter) (*
 	if len(cfg.permissions) == 0 {
 		cfg.permissions = agentPermissions
 	}
+	profiles := map[string]map[string]string{"default": cfg.permissions}
+	for _, name := range cfg.scopes {
+		extra, ok := scopeExtras[name]
+		if !ok {
+			return nil, fmt.Errorf("AGENT_SCOPES: unknown scope %q", name)
+		}
+		p := maps.Clone(cfg.permissions)
+		p[extra[0]] = extra[1]
+		profiles[name] = p
+	}
+	// One token must never both change workflows and run them (ADR 16).
+	for name, p := range profiles {
+		if p["workflows"] != "" && p["actions"] == "write" {
+			return nil, fmt.Errorf("scope %q would grant workflows and actions:write together; move actions:write from AGENT_PERMISSIONS to the actions scope", name)
+		}
+	}
 	requests, err := meter.Int64Counter("broker.token.requests", metric.WithDescription("Token requests by outcome"))
 	if err != nil {
 		return nil, err
@@ -165,7 +200,7 @@ func newBroker(cfg config, actions *oidc.IDTokenVerifier, meter metric.Meter) (*
 	if err != nil {
 		return nil, err
 	}
-	return &broker{cfg: cfg, client: &http.Client{Timeout: 10 * time.Second}, actions: actions, requests: requests, latency: latency}, nil
+	return &broker{cfg: cfg, profiles: profiles, client: &http.Client{Timeout: 10 * time.Second}, actions: actions, requests: requests, latency: latency}, nil
 }
 
 // handleActionsToken is the only path a public route should forward: it never accepts
@@ -189,9 +224,9 @@ func (b *broker) handleLoginApp(w http.ResponseWriter, _ *http.Request) {
 
 func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	outcome, via := "error", "unknown"
+	outcome, via, scope := "error", "unknown", "unknown"
 	defer func() {
-		attrs := metric.WithAttributes(attribute.String("outcome", outcome), attribute.String("via", via))
+		attrs := metric.WithAttributes(attribute.String("outcome", outcome), attribute.String("via", via), attribute.String("scope", scope))
 		b.requests.Add(r.Context(), 1, attrs)
 		b.latency.Record(r.Context(), time.Since(start).Seconds(), attrs)
 	}()
@@ -208,7 +243,8 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Repo string `json:"repo"`
+		Repo  string `json:"repo"`
+		Scope string `json:"scope"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&req); err != nil {
 		fail(http.StatusBadRequest, "bad_request", "invalid JSON body")
@@ -220,6 +256,15 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	audit = append(audit, "repo", req.Repo)
+	requested := cmp.Or(req.Scope, "default")
+	perms, ok := b.profiles[requested]
+	if !ok {
+		fail(http.StatusBadRequest, "bad_request", "unknown or disabled scope")
+		return
+	}
+	// Set only once known, so callers cannot add metric label values.
+	scope = requested
+	audit = append(audit, "scope", scope)
 	if !b.cfg.allowedOrg(owner) {
 		fail(http.StatusForbidden, "denied", "repo outside allowed org")
 		return
@@ -258,9 +303,14 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 			fail(http.StatusForbidden, "denied", "Actions workflow not allowed")
 			return
 		}
+		// Elevated scopes only for reviewed workflows named explicitly; empty allows none.
+		if scope != "default" && (len(b.cfg.scopeWorkflows) == 0 || !matchesAny(b.cfg.scopeWorkflows, c.JobWorkflowRef)) {
+			fail(http.StatusForbidden, "denied", "Actions workflow not allowed scope "+scope)
+			return
+		}
 	} else {
 		via = "device"
-		login, status, err := b.loginUser(ctx, bearer)
+		login, expires, status, err := b.loginUser(ctx, bearer)
 		if err != nil {
 			if status == http.StatusNotFound {
 				fail(http.StatusUnauthorized, "unauthenticated", "invalid login token, run agent-token again to log in")
@@ -271,6 +321,11 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 		}
 		developer = login
 		audit = append(audit, "user", login)
+		// Step-up: the agent may hold a cached login, but only a human completes a fresh device flow.
+		if scope != "default" && (expires == nil || time.Since(expires.Add(-userTokenLifetime)) > stepUpWindow) {
+			fail(http.StatusForbidden, "denied", "scope "+scope+" needs a login from the last 10 minutes: run agent-token --login, then retry")
+			return
+		}
 	}
 
 	jwt, err := b.appJWT(time.Now())
@@ -312,7 +367,7 @@ func (b *broker) handleToken(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tok, err := b.installationToken(ctx, jwt, inst.ID, name, b.cfg.permissions)
+	tok, err := b.installationToken(ctx, jwt, inst.ID, name, perms)
 	if err != nil {
 		fail(http.StatusBadGateway, "error", "minting installation token failed", "err", err)
 		return
@@ -354,22 +409,24 @@ func (b *broker) installationToken(ctx context.Context, jwt string, id int64, re
 	return tok, err
 }
 
-// loginUser returns the login behind a login app user token; only that app's tokens are accepted.
-func (b *broker) loginUser(ctx context.Context, token string) (string, int, error) {
+// loginUser returns the login behind a login app user token and when the token expires (nil:
+// never); only that app's tokens are accepted.
+func (b *broker) loginUser(ctx context.Context, token string) (string, *time.Time, int, error) {
 	var check struct {
 		User *struct {
 			Login string `json:"login"`
 		} `json:"user"`
+		ExpiresAt *time.Time `json:"expires_at"`
 	}
 	basic := "Basic " + base64.StdEncoding.EncodeToString([]byte(b.cfg.loginID+":"+b.cfg.loginSecret))
 	status, err := b.github(ctx, http.MethodPost, "/applications/"+b.cfg.loginID+"/token", basic, map[string]string{"access_token": token}, &check)
 	if err != nil {
-		return "", status, err
+		return "", nil, status, err
 	}
 	if check.User == nil || check.User.Login == "" {
-		return "", http.StatusNotFound, errors.New("token has no user")
+		return "", nil, http.StatusNotFound, errors.New("token has no user")
 	}
-	return check.User.Login, status, nil
+	return check.User.Login, check.ExpiresAt, status, nil
 }
 
 // Ready when GitHub accepts the app key; a GitHub outage marks every replica unready by design.

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Usage: agent-token org/repo  — prints a 1h agent token for that repo.
-#        agent-token --login   — logs in via the login app's device flow (interactive).
+#        agent-token --login   — logs in via the login app's device flow (interactive), always anew.
 #        agent-token --check   — exits 1 unless a login is cached.
 #        agent-token --permissions org/repo — prints the permissions GitHub granted that token (JSON).
 #        agent-token --version — prints the client version.
 # Logs in once via the login app's device flow and caches that login token.
 # LOGIN_APP_CLIENT_ID overrides the login app the broker names at /login-app.
 # AGENT_TOKEN_NONINTERACTIVE=1 fails instead of starting a device flow nobody would see.
+# AGENT_TOKEN_SCOPE=workflows|actions requests an elevated scope; the broker wants a login from
+# the last 10 minutes for it (ADR 16), so run agent-token --login first.
 set -euo pipefail
 version=dev # release.yml stamps the release version
 if [[ ${1:-} == --version ]]; then echo "agent-token $version"; exit; fi
@@ -56,15 +58,21 @@ login_token() {
 }
 
 case $repo in
-  --login) login_token >/dev/null; echo "agent-token: logged in" >&2; exit ;;
+  # Drops the cached login: elevated scopes need a fresh one.
+  --login) rm -f "$cache"; login_token >/dev/null; echo "agent-token: logged in" >&2; exit ;;
   --check) cached "$cache" 300 >/dev/null || { echo "agent-token: not logged in; run: agent-token --login" >&2; exit 1; }; exit ;;
   --permissions) show=permissions; repo=${2:?usage: agent-token --permissions org/repo} ;;
 esac
 # Before any login or request: an unknown flag reached the broker as a repo name; the name is also a cache path.
 [[ $repo =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]] || { echo "agent-token: not a repo or option: $repo; $usage" >&2; exit 2; }
 
+scope=${AGENT_TOKEN_SCOPE:-default}
+[[ $scope =~ ^[a-z_]+$ ]] || { echo "agent-token: AGENT_TOKEN_SCOPE must be a scope name, got: $scope" >&2; exit 2; }
+request=$(jq -cn --arg repo "$repo" --arg scope "$scope" '{repo: $repo} + if $scope == "default" then {} else {scope: $scope} end')
+
 # git and gh ask for every call, so reuse a repo token until 5 minutes before it expires.
 repo_cache="$cache_dir/repos/${repo//\//__}.json"
+[[ $scope == default ]] || repo_cache="${repo_cache%.json}@$scope.json"
 if [[ ${show:-} ]]; then
   # Caches written before permissions were stored hold null; mint a fresh token for those.
   cached "$repo_cache" 300 >/dev/null && jq -e '.permissions // empty' "$repo_cache" && exit
@@ -77,7 +85,7 @@ bearer=$(login_token)
 if ! resp=$(curl -sS -w '\n%{http_code}' "$TOKEN_BROKER_URL/token" \
   -H "Authorization: Bearer $bearer" \
   -H "Content-Type: application/json" \
-  -d "{\"repo\":\"$repo\"}"); then
+  -d "$request"); then
   exit 1
 fi
 status=${resp##*$'\n'}

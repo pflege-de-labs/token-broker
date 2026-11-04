@@ -69,3 +69,5 @@ credentials of a read-only role via `AGENT_PODMAN_ARGS="-e AWS_..."`.
 - Commits are unsigned; merge agent PRs with squash.
 - After 8 hours the login token expires and the next renewal prints a device code on the
   terminal.
+- `AGENT_TOKEN_SCOPE=workflows agent-run` (after `agent-token --login`) gives the session an
+  elevated [scope](scopes.md) for one hour; renewal fails after that, since it needs a fresh login.
