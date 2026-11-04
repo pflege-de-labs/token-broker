@@ -26,6 +26,11 @@ human review, and developer credentials never reach the agent.
 A token is issued only if the developer has write access to the repository, or the OIDC
 token's `repository` and `sub` claims name it, and the agent app is installed there.
 
+![token-broker architecture](docs/diagrams/architecture.svg)
+
+Source: [`docs/diagrams/architecture.puml`](docs/diagrams/architecture.puml); re-render with
+`plantuml -tsvg --no-error-image docs/diagrams/*.puml`.
+
 ## Use it locally
 
 Full guide: <https://pflege-de-labs.github.io/token-broker/>. Requirements: `curl`, `jq`, `gh`, `git`.

@@ -1,0 +1,32 @@
+@startuml architecture
+!include <C4/C4_Container>
+LAYOUT_LEFT_RIGHT()
+
+title token-broker: containers
+
+Person(dev, "Developer", "Has write access to the repository")
+System_Ext(agent, "Coding agent", "Claude Code, on the host, in agent-run or the devcontainer")
+System_Ext(workflow, "GitHub Actions workflow", "Agent job on a GitHub-hosted or self-hosted runner")
+
+System_Boundary(tb, "token-broker") {
+  Container(cli, "Client scripts", "bash: agent-token, agent-gh, agent-commit", "Device-flow login, cached 8h; fetches agent tokens")
+  Container(broker, "Broker", "Go HTTP service on Kubernetes", "Checks the caller, mints single-repo 1h tokens, audit log of every decision")
+  ContainerDb(secret, "Secret", "Kubernetes Secret", "Agent app private key, login app client secret")
+}
+
+System_Ext(gh, "GitHub API", "Agent app (pflege-de-agent), login app (pflege-de-agent-login)")
+System_Ext(oidc, "GitHub Actions OIDC issuer", "token.actions.githubusercontent.com")
+System_Ext(prom, "Prometheus", "Metrics")
+
+Rel(dev, gh, "Approves device code", "github.com/login/device")
+Rel(agent, cli, "Runs")
+Rel(cli, broker, "GET /login-app, POST /token with login-app user token", "HTTPS, internal route (VPN)")
+Rel(cli, gh, "Device flow; git and API calls with agent token", "HTTPS")
+Rel(workflow, oidc, "Requests OIDC token", "audience token-broker")
+Rel(workflow, broker, "POST /token/actions with OIDC token", "HTTPS, public route, rate-limited")
+Rel(broker, secret, "Reads")
+Rel(broker, gh, "Verifies login token, checks write access and app installation, mints installation token", "HTTPS, app JWT")
+Rel(broker, oidc, "Fetches JWKS")
+Rel_U(prom, broker, "Scrapes /metrics", "internal route")
+
+@enduml
