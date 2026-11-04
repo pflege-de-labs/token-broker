@@ -54,6 +54,11 @@ In einer solchen Sitzung blockiert ein `PreToolUse`-Hook Bash-Befehle mit `git c
 `git push` sowie ein bloßes `gh`, wo `agent-gh` existiert. Claude nutzt stattdessen
 [`agent-commit`](../../guides/signed-commits/) und `agent-gh`.
 
+Die Prüfung läuft auch später: Vor einem `git commit`, `git push` oder `gh`-Befehl in einer
+ungeschützten Sitzung prüft der Guard das Repository, auf das der Befehl zielt. Eine Sitzung, die vor
+der Installation der App oder in einem übergeordneten Verzeichnis gestartet wurde, ist ab diesem
+Befehl geschützt.
+
 {{< callout type="warning" >}}
 Das Plugin ist eine Leitplanke, keine Sandbox. Der Hook vergleicht Befehlstext, daher kommen
 `env git push` oder ein Skript, das pusht, mit Ihren Zugangsdaten durch. Für Isolation nutzen Sie
