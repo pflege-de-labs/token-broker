@@ -80,7 +80,10 @@ VS Code forwards your credentials into devcontainers; the setup closes what it c
   it can still sign. For full isolation use `agent-run` (see [local.md](local.md)) or the
   devcontainer CLI without VS Code.
 
-A git worktree does not work as the workspace: its `.git` points outside the mount. Open a clone.
+A git worktree does not work as the workspace: its `.git` points outside the mount. Open a clone,
+and create worktrees inside it with
+`git worktree add --relative-paths .worktrees/<name> -b <branch>` (git 2.48+, `/.worktrees/` in
+`.git/info/exclude`); their paths resolve in the container and on the host.
 `CLAUDE_CODE_OAUTH_TOKEN` is passed from the host if set; otherwise run `claude` and log in. The
 Claude login and settings live in a volume and survive rebuilds.
 

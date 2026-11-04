@@ -8,5 +8,9 @@ short-lived agent tokens, never with the user's own `gh` login, git credentials 
   Rebase instead of merging, and pull before committing when origin moved.
   It refuses new executables and mode changes; for those, ask the user.
 - GitHub CLI: `agent-gh` instead of `gh` (in the agent devcontainer, `gh` already is that wrapper).
+- Worktrees: create them inside the checkout with relative paths,
+  `git worktree add --relative-paths .worktrees/<name> -b <branch>` (git 2.48+), and add
+  `/.worktrees/` to `.git/info/exclude`. A devcontainer mounts only the checkout, so worktrees
+  elsewhere or with absolute paths break there.
 - When a call fails with `run: agent-token --login`, ask the user to run `! agent-token --login`;
   do not fall back to their credentials.
