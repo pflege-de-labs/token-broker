@@ -14,3 +14,6 @@ short-lived agent tokens, never with the user's own `gh` login, git credentials 
   elsewhere or with absolute paths break there.
 - When a call fails with `run: agent-token --login`, ask the user to run `! agent-token --login`;
   do not fall back to their credentials.
+- Default tokens cannot change `.github/workflows/` or dispatch/re-run workflows. If the task needs
+  that, ask the user to run `! agent-token --login`, then within 10 minutes prefix only those calls
+  with `AGENT_TOKEN_SCOPE=workflows` (edit) or `AGENT_TOKEN_SCOPE=actions` (run).

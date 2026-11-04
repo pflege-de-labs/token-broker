@@ -10,12 +10,13 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 
 # $1 port, $2 permissions JSON the broker returns (null: none, like brokers before 0.6.0).
 fake_broker() {
-  python3 - "$@" <<'PY' &
+  python3 - "$@" "$dir/body.$1" <<'PY' &
 import http.server, json, sys
 perms = json.loads(sys.argv[2])
 class H(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
-        self.rfile.read(int(self.headers["Content-Length"]))
+        with open(sys.argv[3], "wb") as f:  # last request body, for the scope checks
+            f.write(self.rfile.read(int(self.headers["Content-Length"])))
         body = {"token": "ghs_fake", "expires_at": "2099-01-01T00:00:00Z"}
         if perms is not None:
             body["permissions"] = perms
@@ -50,6 +51,13 @@ jq '.permissions = null' "$cache" >"$dir/x" && mv "$dir/x" "$cache"
 rm "$cache"
 at 18082 --permissions acme/app 2>/dev/null && fail "broker without permissions accepted"
 [[ $(at 18082 acme/app) == ghs_fake ]] || fail "token after broker without permissions"
+[[ $(jq -c . "$dir/body.18082") == '{"repo":"acme/app"}' ]] || fail "default request carries a scope"
+# Elevated scope: sent to the broker and cached apart from the default token.
+[[ $(AGENT_TOKEN_SCOPE=workflows at 18082 acme/app) == ghs_fake ]] || fail "token with scope"
+[[ $(jq -c . "$dir/body.18082") == '{"repo":"acme/app","scope":"workflows"}' ]] || fail "scope not sent"
+[[ -f $dir/agent-token/repos/acme__app@workflows.json ]] || fail "scoped token not cached per scope"
+rc=0; AGENT_TOKEN_SCOPE='x"y' at 18082 acme/app 2>/dev/null || rc=$?
+[[ $rc == 2 ]] || fail "bad scope: exit $rc, want 2"
 # gh wrapper: a fake real gh behind it records what reaches it.
 mkdir -p "$dir/wrap" "$dir/real" "$dir/nogit"
 cp "$bin/agent-gh" "$dir/wrap/gh"

@@ -6,7 +6,7 @@ The broker needs two org-owned GitHub Apps in `pflege-de`. Settings live under
 | | Agent app (`pflege-de-agent`) | Login app (`pflege-de-agent-login`) |
 |---|---|---|
 | Purpose | Identity agents commit, push and open PRs as | Proves who a developer is (device flow) |
-| Repository permissions | Contents RW, Pull requests RW, Issues RW, Metadata R | **none** |
+| Repository permissions | Contents RW, Pull requests RW, Issues RW, Metadata R; Workflows RW / Actions RW only for [scopes](scopes.md) | **none** |
 | Organization / account permissions | none | none |
 | Device flow | **off** | **on** |
 | Installed | on selected repos | not needed |
@@ -19,8 +19,10 @@ The broker needs two org-owned GitHub Apps in `pflege-de`. Settings live under
 - [ ] *Webhook:* **Active unchecked**. The broker receives no events.
 - [ ] *Identifying and authorizing users:* no callback URL, *Request user authorization (OAuth) during installation* off, **Enable Device Flow off**. User tokens of this app would act as the developer with write access.
 - [ ] *Repository permissions:* Contents **Read and write**, Pull requests **Read and write**, Issues **Read and write**, Metadata **Read-only**. Everything else **No access**, in particular:
-  - Workflows: so an agent cannot edit CI to escalate.
-  - Administration, Secrets, Environments, Actions: no repo or secret management.
+  - Workflows, Actions: only if the deployment enables the `workflows` or `actions`
+    [scope](scopes.md), and only after the repository prerequisites listed there. Default tokens
+    never get them.
+  - Administration, Secrets, Environments: no repo or secret management.
   - Checks/Statuses: so the agent cannot report a required check as green.
 - [ ] *Organization* and *Account permissions:* all **No access**.
 - [ ] *Subscribe to events:* none.
@@ -30,7 +32,7 @@ The broker needs two org-owned GitHub Apps in `pflege-de`. Settings live under
 - [ ] The app is **not** a bypass actor in any ruleset (repo or org). That includes `protect-default-branch` from github-ops.
 - [ ] Note the **App ID** (`config.appId`).
 
-The broker requests only the four permissions above per token, so granting more to the app widens nothing for agents. `AGENT_PERMISSIONS` (chart: `config.agentPermissions`) changes that set (ADR 13); every installation must have accepted each permission in it, or GitHub refuses the token. Keep the app minimal: the private key alone can mint tokens with everything the app has.
+The broker requests only the four permissions above per token, so granting more to the app widens nothing for agents. `AGENT_PERMISSIONS` (chart: `config.agentPermissions`) changes that set (ADR 13); `AGENT_SCOPES` (chart: `config.scopes`) adds Workflows or Actions for tokens that ask for them (ADR 16). Every installation must have accepted each permission requested, or GitHub refuses the token. Keep the app minimal: the private key alone can mint tokens with everything the app has.
 
 ## Login app
 

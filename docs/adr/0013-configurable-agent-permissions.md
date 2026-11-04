@@ -1,6 +1,6 @@
 # 13. Configurable agent token permissions
 
-- Status: accepted
+- Status: accepted, amended by ADR 16 (opt-in scopes)
 - Date: 2026-10-29
 
 ## Context

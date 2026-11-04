@@ -59,6 +59,10 @@ config:
   # issues: write and metadata: read. List the full set; the agent app must be granted all of them.
   # e.g. {contents: write, pull_requests: write, issues: write, metadata: read, actions: write}
   agentPermissions: {}
+  # Opt-in scopes clients may request (AGENT_SCOPES): `workflows` adds workflows: write,
+  # `actions` adds actions: write to the set above. The app must be granted each added permission.
+  # The broker refuses to start if a scope would hold workflows and actions: write together.
+  scopes: []
   actionsOidc:
     # Audience workflows must request (ACTIONS_OIDC_AUDIENCE).
     audience: token-broker
@@ -70,6 +74,10 @@ config:
     # Patterns for the `job_workflow_ref` claim (ACTIONS_ALLOWED_WORKFLOWS), e.g.
     # pflege-de/agent-workflows/.github/workflows/agent.yml@refs/heads/main.
     allowedWorkflows: []
+    # Patterns for the `job_workflow_ref` claim of workflows that may request a scope
+    # (ACTIONS_SCOPE_WORKFLOWS), e.g. acme/app/.github/workflows/release.yml@refs/heads/main.
+    # Empty: workflows get the default set only.
+    scopeWorkflows: []
 
 # Name of a pre-existing Secret with the keys `private-key.pem` (agent app private
 # key) and `login-client-secret` (login app client secret). When set, the chart

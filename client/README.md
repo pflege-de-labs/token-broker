@@ -22,7 +22,11 @@ pinned release.
 
 The developer logs in once per 8h with `agent-token --login` in an interactive terminal. All other
 calls set `AGENT_TOKEN_NONINTERACTIVE=1` and fail with `run: agent-token --login` instead of
-waiting for a device code nobody sees.
+waiting for a device code nobody sees. `--login` always starts a new device flow.
+
+`AGENT_TOKEN_SCOPE=workflows|actions` requests an elevated [scope](../docs/scopes.md) for any of the
+scripts, cached apart from the default token. The broker grants it only within 10 minutes of
+`agent-token --login`.
 
 Environment: `TOKEN_BROKER_URL` (internal broker URL). The login app's client ID comes from the
 broker (`GET /login-app`, token-broker ≥ 0.4.0); `LOGIN_APP_CLIENT_ID` overrides it. The pflege-de

@@ -80,6 +80,18 @@ helm template token-broker "$chart" --values "$chart/ci/default-values.yaml" \
   | grep -A1 "name: AGENT_PERMISSIONS" | grep -q 'value: "actions:write,contents:write"' \
   || fail "agentPermissions not rendered as AGENT_PERMISSIONS"
 
+# Scopes stay off by default; a deployment opts in per scope and per workflow.
+if echo "$default" | grep -q "AGENT_SCOPES\|ACTIONS_SCOPE_WORKFLOWS"; then
+  fail "scopes enabled without being configured"
+fi
+scoped=$(helm template token-broker "$chart" --values "$chart/ci/default-values.yaml" \
+  --set 'config.scopes={workflows,actions}' \
+  --set 'config.actionsOidc.scopeWorkflows={acme/app/.github/workflows/release.yml@refs/heads/main}')
+echo "$scoped" | grep -A1 "name: AGENT_SCOPES" | grep -q 'value: "workflows,actions"' \
+  || fail "scopes not rendered as AGENT_SCOPES"
+echo "$scoped" | grep -A1 "name: ACTIONS_SCOPE_WORKFLOWS" | grep -q 'value: "acme/app/.github/workflows/release.yml@refs/heads/main"' \
+  || fail "scopeWorkflows not rendered as ACTIONS_SCOPE_WORKFLOWS"
+
 # Missing credentials must fail the render, not deploy a broker that crashes on start.
 if helm template token-broker "$chart" >/dev/null 2>&1; then
   fail "chart renders without required config"
