@@ -208,7 +208,7 @@ func newBroker(cfg config, actions *oidc.IDTokenVerifier, meter metric.Meter) (*
 func (b *broker) handleActionsToken(w http.ResponseWriter, r *http.Request) {
 	bearer, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 	if strings.Count(bearer, ".") != 2 {
-		attrs := metric.WithAttributes(attribute.String("outcome", "unauthenticated"), attribute.String("via", "actions"))
+		attrs := metric.WithAttributes(attribute.String("outcome", "unauthenticated"), attribute.String("via", "actions"), attribute.String("scope", "unknown"))
 		b.requests.Add(r.Context(), 1, attrs)
 		http.Error(w, "only GitHub Actions OIDC tokens are accepted here", http.StatusUnauthorized)
 		return

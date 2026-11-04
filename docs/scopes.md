@@ -37,7 +37,7 @@ login is that recent, so an agent cannot elevate itself with a cached login.
 ```sh
 agent-token --login                              # in Claude Code: ! agent-token --login
 AGENT_TOKEN_SCOPE=workflows agent-commit -m "ci: …"
-AGENT_TOKEN_SCOPE=actions gh run rerun 1234 --failed
+AGENT_TOKEN_SCOPE=actions agent-gh run rerun 1234 --failed   # `gh` in the devcontainer
 ```
 
 The elevated token is cached per scope for its hour; calls without `AGENT_TOKEN_SCOPE` keep
