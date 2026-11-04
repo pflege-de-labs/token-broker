@@ -72,7 +72,9 @@ with `--env-file`:
   agent is still forwarded: the firewall blocks port 22, but it can still sign. For full
   isolation use [`agent-run`](../container/).
 * A git worktree does not work as the workspace, because its `.git` points outside the mount.
-  Open a clone.
+  Open a clone, and create worktrees inside it with
+  `git worktree add --relative-paths .worktrees/<name> -b <branch>` (git 2.48+, `/.worktrees/` in
+  `.git/info/exclude`); their paths resolve in the container and on the host.
 * Network access beyond the allowlist needs a change to `allowed-domains` and a rebuild.
 
 For an image without the Feature, see
