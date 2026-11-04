@@ -19,7 +19,7 @@ Claude-Code-Plugins. Sie brauchen `bash`, `curl` und `jq`. Alle lesen die
 
 ```text
 agent-token org/repo                  prints a 1h agent token for that repository
-agent-token --login                   logs in via the login app's device flow (interactive)
+agent-token --login                   always starts a new device flow (interactive)
 agent-token --check                   exits 1 unless a login is cached
 agent-token --permissions org/repo    prints the permissions GitHub granted that token (JSON)
 agent-token --version                 prints the version (from v0.7.0)
@@ -29,6 +29,12 @@ Das Login-Token wird 8 Stunden in `~/.cache/agent-token/login.json` (Modus 600) 
 Ein Token je Repository wird wiederverwendet, bis es in 5 Minuten abläuft. Braucht
 `TOKEN_BROKER_URL`. Die Client-ID der Login-App kommt vom Broker (`GET /login-app`);
 `LOGIN_APP_CLIENT_ID` überschreibt sie.
+
+`AGENT_TOKEN_SCOPE=workflows` oder `actions` fordert einen erhöhten [Scope](../../guides/scopes/)
+an. `agent-commit`, `agent-gh`, der git-Credential-Helper und `agent-run` beachten ihn, weil sie
+`agent-token` aufrufen. Ein Token mit Scope wird getrennt vom Default-Token in
+`repos/<owner>__<repo>@<scope>.json` zwischengespeichert. Der Broker gewährt den Scope nur, wenn
+der Login höchstens 10 Minuten alt ist: Führen Sie zuerst `agent-token --login` aus.
 
 Alle Aufrufe außer `--login` setzen `AGENT_TOKEN_NONINTERACTIVE=1` und scheitern mit
 `run: agent-token --login`, statt auf einen Device-Code zu warten, den niemand sieht.

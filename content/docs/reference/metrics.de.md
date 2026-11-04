@@ -13,12 +13,13 @@ Einheiten- und Typ-Suffixe. Im Chart rendert `metrics.serviceMonitor.enabled` ei
 | `broker.token.requests` | `broker_token_requests_total` | Counter | |
 | `broker.token.duration` | `broker_token_duration_seconds` | Histogramm (`_bucket`, `_sum`, `_count`) | Sekunden |
 
-Beide tragen zwei Attribute:
+Beide tragen drei Attribute:
 
 | Attribut | Werte |
 | --- | --- |
 | `outcome` | `issued`, `unauthenticated`, `bad_request`, `denied`, `error` |
 | `via` | `actions` (Actions-OIDC-Token), `device` (Login-Token), `unknown` (abgewiesen, bevor der Aufrufer bekannt ist) |
+| `scope` | `default`, `workflows`, `actions`, `unknown` (die Anfrage scheiterte, bevor der Scope geprüft war) |
 
 `broker.token.requests` zählt Token-Anfragen nach Ergebnis. `broker.token.duration` erfasst, wie
 lange sie dauerten. Anfragen an `/token/actions` ohne ein Bearer-Token in JWT-Form zählen als

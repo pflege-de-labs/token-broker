@@ -21,8 +21,10 @@ POST /token
 Authorization: Bearer <login token or Actions OIDC token>
 Content-Type: application/json
 
-{"repo": "my-org/my-repo"}
+{"repo": "my-org/my-repo", "scope": "default"}
 ```
+
+`scope` is optional: `default`, `workflows` or `actions`. See [Scopes](../../guides/scopes/).
 
 The bearer token decides the path: a token with two dots is a GitHub Actions OIDC token, anything
 else is a user token of the login app. The body is limited to 4096 bytes.
@@ -37,15 +39,20 @@ The token covers the one repository and lives one hour. Errors are plain-text bo
 
 | Status | Cause |
 | --- | --- |
-| 400 | Invalid JSON, or `repo` is not `owner/name` |
+| 400 | Invalid JSON, `repo` is not `owner/name`, or `scope` is unknown or not enabled |
 | 401 | Missing bearer token, invalid or unreadable Actions OIDC token, invalid login token |
-| 403 | Repository outside `GITHUB_ORG`; app not installed on the repository; Actions token for a different repository or subject; ref or workflow not allowed; the developer has no push access |
+| 403 | Repository outside `GITHUB_ORG`; app not installed on the repository; Actions token for a different repository or subject; ref or workflow not allowed; the developer has no push access; an elevated `scope` without a login from the last 10 minutes (the message says to run `agent-token --login`) or for a workflow outside `ACTIONS_SCOPE_WORKFLOWS` |
 | 500 | Signing the app JWT failed |
 | 502 | GitHub failed: login token check, installation lookup, permission lookup or token minting |
 
 For a login token the broker issues a token only if the developer has `write` or `admin` access
 to the repository. For an Actions token both the `repository` and the `sub` claim must name the
 requested repository, and any configured ref and workflow allowlists must match.
+
+An elevated scope needs more. For a login token, the login must be at most 10 minutes old. The
+broker derives that from the token's `expires_at` minus 8 hours; a token without expiry is
+refused. For an Actions token, `job_workflow_ref` must match `ACTIONS_SCOPE_WORKFLOWS`; empty
+allows none.
 
 ## `POST /token/actions`
 

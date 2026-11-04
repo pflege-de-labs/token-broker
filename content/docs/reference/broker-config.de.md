@@ -18,12 +18,20 @@ Der Broker liest seine Konfiguration aus Umgebungsvariablen. Das Helm-Chart erze
 | `ACTIONS_ALLOWED_REFS` | `config.actionsOidc.allowedRefs` | leer: beliebig | Kommagetrennte Glob-Muster für den Claim `ref`. |
 | `ACTIONS_ALLOWED_WORKFLOWS` | `config.actionsOidc.allowedWorkflows` | leer: beliebig | Kommagetrennte Glob-Muster für den Claim `job_workflow_ref`. |
 | `AGENT_PERMISSIONS` | `config.agentPermissions` | `contents:write,pull_requests:write,issues:write,metadata:read` | Berechtigungen jedes Agent-Tokens als `name:level,...`, Level `read` oder `write`. |
+| `AGENT_SCOPES` | `config.scopes` | leer: keine | Kommagetrennte optionale Scopes, die Clients anfordern dürfen: `workflows`, `actions`. Siehe [Scopes](../../guides/scopes/). |
+| `ACTIONS_SCOPE_WORKFLOWS` | `config.actionsOidc.scopeWorkflows` | leer: keine | Kommagetrennte Glob-Muster für den Claim `job_workflow_ref` von Workflows, die einen Scope anfordern dürfen. |
 | `LISTEN_ADDR` | | `:8080` | Listen-Adresse. |
 | `GITHUB_API_URL` | `config.apiUrl` | `https://api.github.com` | Basis-URL der GitHub-API. |
 
 In Glob-Mustern steht `*` für beliebige Zeichen einschließlich `/`. `AGENT_PERMISSIONS` ersetzt die
 Standardmenge: Listen Sie alle Berechtigungen auf, und die Agent-App muss jede davon erhalten
 haben, sonst verweigert GitHub das Token. Ein ungültiger Eintrag stoppt den Broker beim Start.
+
+`workflows` fügt der Menge aus `AGENT_PERMISSIONS` `workflows: write` hinzu, `actions` fügt
+`actions: write` hinzu. Die Agent-App muss jede Berechtigung erhalten haben, die ein Scope
+ergänzt. Der Broker startet nicht, wenn ein aktivierter Scope `workflows` und `actions: write`
+zusammen enthielte; verschieben Sie `actions: write` aus `AGENT_PERMISSIONS` in den Scope
+`actions`, bevor Sie `workflows` aktivieren.
 
 Der Broker braucht ausgehenden Zugriff nur auf `api.github.com` und
 `token.actions.githubusercontent.com`. Er protokolliert jedes ausgestellte und abgelehnte Token als

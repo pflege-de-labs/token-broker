@@ -18,12 +18,19 @@ its [values](../helm-values/).
 | `ACTIONS_ALLOWED_REFS` | `config.actionsOidc.allowedRefs` | empty: any | Comma-separated glob patterns for the `ref` claim. |
 | `ACTIONS_ALLOWED_WORKFLOWS` | `config.actionsOidc.allowedWorkflows` | empty: any | Comma-separated glob patterns for the `job_workflow_ref` claim. |
 | `AGENT_PERMISSIONS` | `config.agentPermissions` | `contents:write,pull_requests:write,issues:write,metadata:read` | Permissions of every agent token, as `name:level,...`, level `read` or `write`. |
+| `AGENT_SCOPES` | `config.scopes` | empty: none | Comma-separated opt-in scopes clients may request: `workflows`, `actions`. See [Scopes](../../guides/scopes/). |
+| `ACTIONS_SCOPE_WORKFLOWS` | `config.actionsOidc.scopeWorkflows` | empty: none | Comma-separated glob patterns for the `job_workflow_ref` claim of workflows that may request a scope. |
 | `LISTEN_ADDR` | | `:8080` | Listen address. |
 | `GITHUB_API_URL` | `config.apiUrl` | `https://api.github.com` | GitHub API base URL. |
 
 In glob patterns `*` matches any characters, including `/`. `AGENT_PERMISSIONS` replaces the
 default set: list all permissions, and the agent app must have been granted each of them, or
 GitHub refuses the token. An invalid entry stops the broker at start.
+
+`workflows` adds `workflows: write` and `actions` adds `actions: write` to the `AGENT_PERMISSIONS`
+set. The agent app must be granted each permission a scope adds. The broker refuses to start if
+any enabled scope would hold `workflows` and `actions: write` together; move `actions: write` from
+`AGENT_PERMISSIONS` to the `actions` scope before you enable `workflows`.
 
 The broker needs outbound access to `api.github.com` and `token.actions.githubusercontent.com`
 only. It logs every issued and denied token as a structured log line with the caller and the

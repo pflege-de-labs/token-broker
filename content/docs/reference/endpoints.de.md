@@ -21,8 +21,10 @@ POST /token
 Authorization: Bearer <login token or Actions OIDC token>
 Content-Type: application/json
 
-{"repo": "my-org/my-repo"}
+{"repo": "my-org/my-repo", "scope": "default"}
 ```
+
+`scope` ist optional: `default`, `workflows` oder `actions`. Siehe [Scopes](../../guides/scopes/).
 
 Das Bearer-Token bestimmt den Weg: Ein Token mit zwei Punkten ist ein GitHub-Actions-OIDC-Token,
 alles andere ein User-Token der Login-App. Der Body ist auf 4096 Bytes begrenzt.
@@ -37,9 +39,9 @@ Das Token gilt für das eine Repository und lebt eine Stunde. Fehler sind Klarte
 
 | Status | Ursache |
 | --- | --- |
-| 400 | Ungültiges JSON, oder `repo` ist nicht `owner/name` |
+| 400 | Ungültiges JSON, `repo` ist nicht `owner/name`, oder `scope` ist unbekannt oder nicht aktiviert |
 | 401 | Fehlendes Bearer-Token, ungültiges oder unlesbares Actions-OIDC-Token, ungültiges Login-Token |
-| 403 | Repository außerhalb von `GITHUB_ORG`; App nicht auf dem Repository installiert; Actions-Token für ein anderes Repository oder einen anderen Subject; Ref oder Workflow nicht erlaubt; der Entwickler hat keinen Push-Zugriff |
+| 403 | Repository außerhalb von `GITHUB_ORG`; App nicht auf dem Repository installiert; Actions-Token für ein anderes Repository oder einen anderen Subject; Ref oder Workflow nicht erlaubt; der Entwickler hat keinen Push-Zugriff; ein erhöhter `scope` ohne Login der letzten 10 Minuten (die Meldung verweist auf `agent-token --login`) oder für einen Workflow außerhalb von `ACTIONS_SCOPE_WORKFLOWS` |
 | 500 | Signieren des App-JWT fehlgeschlagen |
 | 502 | GitHub ist fehlgeschlagen: Prüfung des Login-Tokens, Installation-Lookup, Berechtigungsabfrage oder Ausstellen des Tokens |
 
@@ -47,6 +49,11 @@ Bei einem Login-Token stellt der Broker nur dann ein Token aus, wenn der Entwick
 `admin`-Zugriff auf das Repository hat. Bei einem Actions-Token müssen der Claim `repository` und
 der Claim `sub` beide das angeforderte Repository nennen, und konfigurierte Positivlisten für Refs
 und Workflows müssen passen.
+
+Ein erhöhter Scope verlangt mehr. Bei einem Login-Token darf der Login höchstens 10 Minuten alt
+sein. Der Broker leitet das aus `expires_at` des Tokens minus 8 Stunden ab; ein Token ohne Ablauf
+wird abgelehnt. Bei einem Actions-Token muss `job_workflow_ref` zu `ACTIONS_SCOPE_WORKFLOWS`
+passen; leer lässt keinen zu.
 
 ## `POST /token/actions` {#post-tokenactions}
 

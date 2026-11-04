@@ -37,14 +37,22 @@ Values des Charts `token-broker`, veröffentlicht unter
 | `config.loginClientId` | `LOGIN_APP_CLIENT_ID` | Pflicht |
 | `config.apiUrl` | `GITHUB_API_URL` | leer: `https://api.github.com` |
 | `config.agentPermissions` | `AGENT_PERMISSIONS` | `{}`: die Standardmenge |
+| `config.scopes` | `AGENT_SCOPES` | `[]`: keine |
 | `config.actionsOidc.audience` | `ACTIONS_OIDC_AUDIENCE` | `token-broker` |
 | `config.actionsOidc.issuer` | `ACTIONS_OIDC_ISSUER` | leer: Aussteller von GitHub |
 | `config.actionsOidc.allowedRefs` | `ACTIONS_ALLOWED_REFS` | `[]` |
 | `config.actionsOidc.allowedWorkflows` | `ACTIONS_ALLOWED_WORKFLOWS` | `[]` |
+| `config.actionsOidc.scopeWorkflows` | `ACTIONS_SCOPE_WORKFLOWS` | `[]`: keine |
 
 `config.agentPermissions` ist eine Map, zum Beispiel
 `{contents: write, pull_requests: write, issues: write, metadata: read, actions: write}`. Listen Sie
 die vollständige Menge auf; die Agent-App muss alle erhalten haben.
+
+`config.scopes` ist eine Liste aus `workflows` und `actions`; jeder Eintrag fügt dieser Menge eine
+Berechtigung hinzu, die die App erhalten haben muss. Der Broker startet nicht, wenn ein Scope
+`workflows` und `actions: write` zusammen enthielte. `config.actionsOidc.scopeWorkflows` listet
+die Muster für `job_workflow_ref` von Workflows, die einen Scope anfordern dürfen; leer heißt
+keine. Siehe [Scopes](../../guides/scopes/).
 
 ## Secret {#secret}
 

@@ -12,12 +12,13 @@ suffixes. In the chart, `metrics.serviceMonitor.enabled` renders a `ServiceMonit
 | `broker.token.requests` | `broker_token_requests_total` | counter | |
 | `broker.token.duration` | `broker_token_duration_seconds` | histogram (`_bucket`, `_sum`, `_count`) | seconds |
 
-Both carry two attributes:
+Both carry three attributes:
 
 | Attribute | Values |
 | --- | --- |
 | `outcome` | `issued`, `unauthenticated`, `bad_request`, `denied`, `error` |
 | `via` | `actions` (Actions OIDC token), `device` (login token), `unknown` (rejected before the caller is known) |
+| `scope` | `default`, `workflows`, `actions`, `unknown` (the request failed before the scope was validated) |
 
 `broker.token.requests` counts token requests by outcome. `broker.token.duration` records how long
 they took. Requests to `/token/actions` without a JWT-shaped bearer token count as
