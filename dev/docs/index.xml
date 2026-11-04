@@ -120,6 +120,9 @@ does, Claude is told to commit and call GitHub with agent tokens, and the hook a
 &lt;p&gt;In such a session a &lt;code&gt;PreToolUse&lt;/code&gt; hook blocks Bash commands that contain &lt;code&gt;git commit&lt;/code&gt; or
 &lt;code&gt;git push&lt;/code&gt;, and a bare &lt;code&gt;gh&lt;/code&gt; where &lt;code&gt;agent-gh&lt;/code&gt; exists. Claude uses &lt;a href="../../guides/signed-commits/"&gt;&lt;code&gt;agent-commit&lt;/code&gt;&lt;/a&gt;
 and &lt;code&gt;agent-gh&lt;/code&gt; instead.&lt;/p&gt;
+&lt;p&gt;The check also runs later: before a &lt;code&gt;git commit&lt;/code&gt;, &lt;code&gt;git push&lt;/code&gt; or &lt;code&gt;gh&lt;/code&gt; command in an unguarded
+session, the guard checks the repository the command targets. A session started before the app was
+installed, or in a parent directory, is guarded from that command on.&lt;/p&gt;
 &lt;div class="hx:overflow-x-auto hx:mt-6 hx:flex hx:rounded-lg hx:border hx:py-2 hx:ltr:pr-4 hx:rtl:pl-4 hx:contrast-more:border-current hx:contrast-more:dark:border-current hx:border-amber-200 hx:bg-amber-100 hx:text-amber-900 hx:dark:border-amber-200/30 hx:dark:bg-amber-900/30 hx:dark:text-amber-200"&gt;
 &lt;div class="hx:ltr:pl-3 hx:ltr:pr-2 hx:rtl:pr-3 hx:rtl:pl-2"&gt;&lt;svg height=1.2em class="hx:inline-block hx:align-middle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/&gt;&lt;/svg&gt;&lt;/div&gt;
 &lt;div class="hx:w-full hx:min-w-0 hx:leading-7"&gt;
