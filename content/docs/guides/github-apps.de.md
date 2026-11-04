@@ -9,7 +9,7 @@ Der Broker braucht zwei GitHub-Apps im Besitz der Organisation. Die Einstellunge
 | | Agent-App | Login-App |
 | --- | --- | --- |
 | Zweck | Identität, als die Agenten committen, pushen und Pull Requests öffnen | Weist nach, wer ein Entwickler ist (Device Flow) |
-| Repository-Berechtigungen | Contents RW, Pull requests RW, Issues RW, Metadata R | keine |
+| Repository-Berechtigungen | Contents RW, Pull requests RW, Issues RW, Metadata R; Workflows RW oder Actions RW nur für [Scopes](../scopes/) | keine |
 | Berechtigungen für Organisation / Konto | keine | keine |
 | Device Flow | aus | an |
 | Installiert | auf ausgewählten Repositories | nicht nötig |
@@ -25,9 +25,11 @@ Der Broker braucht zwei GitHub-Apps im Besitz der Organisation. Die Einstellunge
   Entwickler handeln.
 * **Repository permissions:** Contents, Pull requests und Issues **Read and write**, Metadata
   **Read-only**. Alles andere **No access**, insbesondere:
-  * Workflows, damit ein Agent die CI nicht ändern kann, um seine Rechte auszuweiten.
-  * Administration, Secrets, Environments und Actions, damit er weder Repositories noch Secrets
-    verwalten kann.
+  * Workflows und Actions, es sei denn, das Deployment aktiviert den [Scope](../scopes/)
+    `workflows` oder `actions`, und dann erst nach den dort genannten Voraussetzungen für das
+    Repository. Default-Tokens bekommen sie nie.
+  * Administration, Secrets und Environments, damit er weder Repositories noch Secrets verwalten
+    kann.
   * Checks und Statuses, damit er einen erforderlichen Check nicht als grün melden kann.
 * **Organization** und **Account permissions:** überall **No access**. **Subscribe to events:**
   keine.
@@ -44,7 +46,8 @@ Jedes Repository, auf dem die App installiert ist, braucht außerdem
 
 Der Broker fordert pro Token nur die vier Berechtigungen an, deshalb erweitert eine größere
 Berechtigung der App nichts für Agenten. `AGENT_PERMISSIONS` (Chart: `config.agentPermissions`)
-ändert diese Menge; jede Installation muss jede darin enthaltene Berechtigung akzeptiert haben,
+ändert diese Menge. `AGENT_SCOPES` (Chart: `config.scopes`) ergänzt Workflows oder Actions für
+Tokens, die sie anfordern. Jede Installation muss jede angeforderte Berechtigung akzeptiert haben,
 sonst verweigert GitHub das Token. Halten Sie die App minimal: Der private Schlüssel allein kann
 Tokens mit allem ausstellen, was die App hat.
 

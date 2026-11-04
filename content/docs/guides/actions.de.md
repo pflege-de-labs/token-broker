@@ -72,3 +72,10 @@ config:
 Eine Anfrage muss je einem Muster jeder konfigurierten Liste entsprechen. Leere Listen schränken
 nichts ein. Läufe für Pull Requests tragen `ref: refs/pull/<n>/merge`, daher sperrt `allowedRefs`
 ohne `refs/pull/*` Agenten in Pull Requests.
+
+## Einen Scope anfordern {#request-a-scope}
+
+Ein Workflow erhält den [Scope](../scopes/) `workflows` oder `actions` mit `"scope":"workflows"`
+im Request-Body, aber nur, wenn das Deployment ihn aktiviert und der `job_workflow_ref` des
+Workflows zu `config.actionsOidc.scopeWorkflows` passt. Diese Liste ist standardmäßig leer, also
+bekommt kein Workflow einen Scope.

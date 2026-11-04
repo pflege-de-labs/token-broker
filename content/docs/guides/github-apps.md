@@ -9,7 +9,7 @@ Developer settings → GitHub Apps**.
 | | Agent app | Login app |
 | --- | --- | --- |
 | Purpose | Identity agents commit, push and open pull requests as | Proves who a developer is (device flow) |
-| Repository permissions | Contents RW, Pull requests RW, Issues RW, Metadata R | none |
+| Repository permissions | Contents RW, Pull requests RW, Issues RW, Metadata R; Workflows RW or Actions RW only for [scopes](../scopes/) | none |
 | Organization / account permissions | none | none |
 | Device flow | off | on |
 | Installed | on selected repositories | not needed |
@@ -25,9 +25,10 @@ Developer settings → GitHub Apps**.
   developer.
 * **Repository permissions:** Contents, Pull requests and Issues **Read and write**, Metadata
   **Read-only**. Everything else **No access**, in particular:
-  * Workflows, so an agent cannot edit CI to escalate.
-  * Administration, Secrets, Environments and Actions, so it cannot manage repositories or
-    secrets.
+  * Workflows and Actions, unless the deployment enables the `workflows` or `actions`
+    [scope](../scopes/), and then only after the repository prerequisites listed there. Default
+    tokens never get them.
+  * Administration, Secrets and Environments, so it cannot manage repositories or secrets.
   * Checks and Statuses, so it cannot report a required check as green.
 * **Organization** and **Account permissions:** all **No access**. **Subscribe to events:** none.
 * **Private keys:** generate one key. It goes only into the broker Secret as `private-key.pem`,
@@ -39,9 +40,10 @@ Developer settings → GitHub Apps**.
 Every repository the app is installed on must also set [review rules](../review-rules/).
 
 The broker requests only the four permissions per token, so granting more to the app widens
-nothing for agents. `AGENT_PERMISSIONS` (chart: `config.agentPermissions`) changes that set; every
-installation must have accepted each permission in it, or GitHub refuses the token. Keep the app
-minimal: the private key alone can mint tokens with everything the app has.
+nothing for agents. `AGENT_PERMISSIONS` (chart: `config.agentPermissions`) changes that set.
+`AGENT_SCOPES` (chart: `config.scopes`) adds Workflows or Actions for tokens that ask for them.
+Every installation must have accepted each permission requested, or GitHub refuses the token. Keep
+the app minimal: the private key alone can mint tokens with everything the app has.
 
 ## Login app
 

@@ -37,14 +37,21 @@ The authoritative list with comments is
 | `config.loginClientId` | `LOGIN_APP_CLIENT_ID` | required |
 | `config.apiUrl` | `GITHUB_API_URL` | empty: `https://api.github.com` |
 | `config.agentPermissions` | `AGENT_PERMISSIONS` | `{}`: the default set |
+| `config.scopes` | `AGENT_SCOPES` | `[]`: none |
 | `config.actionsOidc.audience` | `ACTIONS_OIDC_AUDIENCE` | `token-broker` |
 | `config.actionsOidc.issuer` | `ACTIONS_OIDC_ISSUER` | empty: GitHub's issuer |
 | `config.actionsOidc.allowedRefs` | `ACTIONS_ALLOWED_REFS` | `[]` |
 | `config.actionsOidc.allowedWorkflows` | `ACTIONS_ALLOWED_WORKFLOWS` | `[]` |
+| `config.actionsOidc.scopeWorkflows` | `ACTIONS_SCOPE_WORKFLOWS` | `[]`: none |
 
 `config.agentPermissions` is a map, for example
 `{contents: write, pull_requests: write, issues: write, metadata: read, actions: write}`. List the
 full set; the agent app must be granted all of them.
+
+`config.scopes` is a list of `workflows` and `actions`; each adds one permission to that set, and
+the app must be granted it. The broker does not start if a scope would hold `workflows` and
+`actions: write` together. `config.actionsOidc.scopeWorkflows` lists the `job_workflow_ref` patterns
+of workflows that may request a scope; empty means none. See [Scopes](../../guides/scopes/).
 
 ## Secret
 

@@ -10,6 +10,7 @@ Variables the client scripts and `agent-run` read.
 | `TOKEN_BROKER_URL` | `agent-token` and the scripts built on it | Broker URL. Required. |
 | `LOGIN_APP_CLIENT_ID` | `agent-token` | Overrides the login app client ID that the broker serves at `/login-app`. |
 | `AGENT_TOKEN_NONINTERACTIVE` | `agent-token` | `1` fails instead of starting a device flow. Set by the other scripts. |
+| `AGENT_TOKEN_SCOPE` | `agent-token` and the scripts built on it, `agent-run` | `workflows` or `actions`: request that [scope](../../guides/scopes/). Needs a login from the last 10 minutes. Default: no scope. |
 | `XDG_CACHE_HOME` | `agent-token`, `agent-run` | Base of the cache directory; default `~/.cache`. The cache is `<base>/agent-token`. |
 | `AGENT_COMMIT_MODE` | `agent-commit` | `local` runs plain `git commit`; default `api`. |
 | `GH_REPO` | `agent-gh` | Target repository, as for `gh`. |

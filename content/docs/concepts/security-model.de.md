@@ -16,6 +16,21 @@ requests und Issues. Es hat keine Berechtigungen für Workflows, Administration,
 Statuses, kann also weder die CI ändern noch das Repository verwalten noch einen erforderlichen
 Check als grün melden.
 
+## Scopes trennen Bearbeiten und Ausführen {#scopes-keep-editing-and-running-apart}
+
+Zwei optionale [Scopes](../../guides/scopes/) fügen je eine Berechtigung hinzu, jeweils für ein
+einzelnes Token: `workflows` lässt einen Agent die CI ändern, `actions` lässt ihn Workflows
+ausführen. Kein Token hat beides, und der Broker startet nicht, wenn ein Scope beides enthielte.
+Ein Entwickler erhält einen erhöhten Scope nur innerhalb von 10 Minuten nach einem frischen
+Device-Flow-Login, sodass ein Agent sich mit einem zwischengespeicherten Login nicht selbst
+höherstufen kann. Ein Workflow erhält ihn nur, wenn sein `job_workflow_ref` in
+`ACTIONS_SCOPE_WORKFLOWS` steht.
+
+Getrennte Tokens trennen Bearbeiten und Ausführen nicht: Ein gepushter Workflow läuft über seinen
+`push`- oder `pull_request`-Trigger ohne `actions: write`. Ein Repository schützt, dass Code aus
+Agent-Branches ohne Privilegien läuft, bis ein Mensch ihn mergt. Der Broker erzwingt die
+[Voraussetzungen](../../guides/scopes/#before-enabling-workflows-on-a-repository) nicht.
+
 ## Menschen bleiben beteiligt {#humans-stay-in-the-loop}
 
 Die Agent-App kann Pull Requests freigeben, und mit Schreibrechten auf Inhalte würden ihre

@@ -14,6 +14,20 @@ permissions. Metadata aside, the default is contents, pull requests and issues. 
 workflow, administration, secrets or status permissions, so it cannot edit CI, manage the
 repository or report a required check as green.
 
+## Scopes keep editing and running apart
+
+Two opt-in [scopes](../../guides/scopes/) add one permission each, for one token at a time:
+`workflows` lets an agent edit CI, `actions` lets it run workflows. No token holds both, and the
+broker refuses to start if a scope would. A developer gets an elevated scope only within 10
+minutes of a fresh device-flow login, so an agent cannot elevate itself with a cached login. A
+workflow gets one only if its `job_workflow_ref` is listed in `ACTIONS_SCOPE_WORKFLOWS`.
+
+Separate tokens do not separate editing from running: a pushed workflow runs on its `push` or
+`pull_request` trigger without `actions: write`. What protects a repository is that code from
+agent branches runs without privileges until a human merges it. The
+[prerequisites](../../guides/scopes/#before-enabling-workflows-on-a-repository) are not enforced
+by the broker.
+
 ## Humans stay in the loop
 
 The agent app can approve pull requests, and with contents write its approvals would count toward
