@@ -76,7 +76,9 @@ beide Variablen für das `origin`-Repository und schreibt `.devcontainer/.env`, 
   SSH-Agent wird weiterhin weitergeleitet: Die Firewall blockiert Port 22, aber er kann noch
   signieren. Für volle Isolation nutzen Sie [`agent-run`](../container/).
 * Ein git Worktree funktioniert nicht als Workspace, weil sein `.git` außerhalb des Mounts zeigt.
-  Öffnen Sie einen Klon.
+  Öffnen Sie einen Klon und legen Sie Worktrees darin an, mit
+  `git worktree add --relative-paths .worktrees/<name> -b <branch>` (git 2.48+, `/.worktrees/` in
+  `.git/info/exclude`); ihre Pfade funktionieren dann im Container und auf dem Host.
 * Netzwerkzugriff über die Positivliste hinaus braucht eine Änderung an `allowed-domains` und einen
   Rebuild.
 
