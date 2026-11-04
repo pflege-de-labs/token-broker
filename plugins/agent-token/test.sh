@@ -8,8 +8,20 @@ export TMPDIR=$tmp PATH="$tmp/bin:$PATH"
 mkdir -p "$tmp/bin" "$tmp/claude-agent-token"
 echo org/repo >"$tmp/claude-agent-token/marked"
 
+# The stub gh answers `repo view` and the org variable lookup.
+cat >"$tmp/bin/gh" <<'EOF'
+#!/bin/sh
+case $1 in
+  # With STUB_DIR set, only that folder is the repo.
+  repo) [ -z "${STUB_DIR-}" ] || [ "$PWD" = "$STUB_DIR" ] && echo "${STUB_REPO-org/repo}" ;;
+  api) printf '%s\n' "${STUB_URL-https://broker.example/x}" ;;
+esac
+EOF
+chmod 755 "$tmp/bin/gh"
+# Unmarked sessions recheck the topic; for these the repo has none.
+export STUB_REPO=
 fail=0
-input() { printf '{"session_id": "%s", "tool_input": {"command": %s}}' "$1" "$(jq -n --arg c "$2" '$c')"; }
+input() { printf '{"session_id": "%s", "cwd": "%s", "tool_input": {"command": %s}}' "$1" "${3-}" "$(jq -n --arg c "$2" '$c')"; }
 run() { # session, command, expected exit code
   local got=0
   input "$1" "$2" | hooks/guard.sh 2>/dev/null || got=$?
@@ -39,15 +51,37 @@ nojq() { # session, expected exit code
 nojq marked 2
 nojq other 0
 
-# session-start.sh: the stub gh answers `repo view` and the org variable lookup.
-cat >"$tmp/bin/gh" <<'EOF'
-#!/bin/sh
-case $1 in
-  repo) echo "${STUB_REPO-org/repo}" ;;
-  api) printf '%s\n' "${STUB_URL-https://broker.example/x}" ;;
-esac
-EOF
-chmod 755 "$tmp/bin/gh"
+# App installed after SessionStart: the first guarded command marks the session and blocks.
+late() { # session, command, expected exit code, then env assignments
+  local got=0
+  input "$1" "$2" | env -u TOKEN_BROKER_URL -u CLAUDE_PLUGIN_OPTION_BROKER_URL "${@:4}" XDG_CACHE_HOME="$tmp/cache" hooks/guard.sh 2>"$tmp/err" || got=$?
+  [[ $got == "$3" ]] || { echo "FAIL late ($1) '$2': exit $got, want $3: $(cat "$tmp/err")"; fail=1; }
+}
+echo "$tmp/late-env" >"$tmp/claude-agent-token/late.env"
+late late 'git status' 0 STUB_REPO=org/repo
+[[ ! -e $tmp/claude-agent-token/late ]] || { echo "FAIL late: unguarded command marked the session"; fail=1; }
+late late 'git commit -m x' 2 STUB_REPO=org/repo
+grep -q 'GitHub access in org/repo' "$tmp/err" || { echo "FAIL late: no context: $(cat "$tmp/err")"; fail=1; }
+[[ -f $tmp/claude-agent-token/late ]] || { echo "FAIL late: session not marked"; fail=1; }
+grep -qx 'export TOKEN_BROKER_URL=https://broker.example/x' "$tmp/late-env" || { echo "FAIL late env file"; fail=1; }
+late late 'agent-commit -m x' 0
+late late2 'gh pr list' 0
+[[ ! -e $tmp/claude-agent-token/late2 ]] || { echo "FAIL late2: marked without topic"; fail=1; }
+# Session started in a parent folder: the guard rechecks the folder the command targets.
+mkdir -p "$tmp/ws/repo"
+cwd() { # session, command, expected exit code
+  local got=0
+  input "$1" "$2" "$tmp/ws" | env -u TOKEN_BROKER_URL STUB_REPO=org/repo STUB_DIR="$tmp/ws/repo" XDG_CACHE_HOME="$tmp/cache" hooks/guard.sh 2>"$tmp/err" || got=$?
+  [[ $got == "$3" ]] || { echo "FAIL cwd ($1) '$2': exit $got, want $3: $(cat "$tmp/err")"; fail=1; }
+}
+cwd ws1 'git push' 0
+cwd ws2 'cd repo && git push' 2
+cwd ws3 'git -C repo push' 2
+cwd ws4 'cd "repo"; gh pr list' 2
+cwd ws5 'cd elsewhere && git push' 0
+unset STUB_REPO
+
+# session-start.sh
 start() { # expected output pattern, then env assignments
   local out
   out=$(env -u TOKEN_BROKER_URL -u CLAUDE_PLUGIN_OPTION_BROKER_URL "${@:2}" CLAUDE_ENV_FILE="$tmp/env" XDG_CACHE_HOME="$tmp/cache" hooks/session-start.sh <<<'{"session_id": "s1"}')
@@ -56,6 +90,7 @@ start() { # expected output pattern, then env assignments
 start 'GitHub access in org/repo'
 grep -qx 'export TOKEN_BROKER_URL=https://broker.example/x' "$tmp/env" || { echo "FAIL env file: $(cat "$tmp/env")"; fail=1; }
 [[ -f $tmp/claude-agent-token/s1 ]] || { echo "FAIL session not marked"; fail=1; }
+grep -qx "$tmp/env" "$tmp/claude-agent-token/s1.env" || { echo "FAIL env file path not saved for guard.sh"; fail=1; }
 rm "$tmp/env"
 start 'GitHub access' CLAUDE_PLUGIN_OPTION_BROKER_URL=https://option.example STUB_URL=
 grep -qx 'export TOKEN_BROKER_URL=https://option.example' "$tmp/env" || { echo "FAIL option URL: $(cat "$tmp/env")"; fail=1; }

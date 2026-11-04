@@ -39,12 +39,20 @@ blocks Bash commands with `git commit`, `git push` or a bare `gh`. Without `jq` 
 command, since it cannot read them. The session start leaves a marker in
 `$TMPDIR/claude-agent-token/<session id>` for it. Cases: `plugins/agent-token/test.sh`, run in CI.
 
+In an unmarked session the guard reruns the topic check before each `git commit`, `git push` or
+`gh` command, in the directory the command targets (`cd <dir> && …`, `git -C <dir>`, else the
+session's working directory). If the repo now carries the topic, it marks the session, blocks the
+command and shows Claude the same context. So sessions started before the app was installed, or
+outside the repo, get guarded too. Each such command in a repo without the topic costs one
+`gh repo view`.
+
 ## Limits
 
 - It is a guardrail, not a sandbox: the guard matches command text, so `env git push`,
   `/usr/bin/git push` or a script that pushes get through with the developer's credentials. For
   isolation run the agent with [`agent-run`](local.md) or the [devcontainer](containers.md).
 - The marker belongs to the session, not the directory: after a `cd` into another repo the guard
-  still applies, and a session started outside an agent-token repo stays unguarded.
+  still applies. The late check reads only the first `cd` or `-C` in a command, so
+  `cd a && cd b && git push` is checked in `a`.
 - Repo admins can edit topics by hand. The broker still refuses tokens where the app is not
   installed, so a wrong topic costs a failed call, nothing more.
