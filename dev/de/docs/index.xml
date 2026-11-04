@@ -178,7 +178,7 @@ Claude-Code-Plugins. Sie brauchen &lt;code&gt;bash&lt;/code&gt;, &lt;code&gt;cur
 &lt;h2 data-hextra-search-id="agent-token"&gt;&lt;code&gt;agent-token&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="agent-token"&gt;&lt;/span&gt;
 &lt;a href="#agent-token" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
 &lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token org/repo prints a 1h agent token for that repository
-&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --login logs in via the login app&amp;#39;s device flow (interactive)
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --login always starts a new device flow (interactive)
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --check exits 1 unless a login is cached
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --permissions org/repo prints the permissions GitHub granted that token (JSON)
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --version prints the version (from v0.7.0)&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
@@ -197,6 +197,11 @@ data-copied-label="Kopiert!"
 Ein Token je Repository wird wiederverwendet, bis es in 5 Minuten abläuft. Braucht
 &lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt;. Die Client-ID der Login-App kommt vom Broker (&lt;code&gt;GET /login-app&lt;/code&gt;);
 &lt;code&gt;LOGIN_APP_CLIENT_ID&lt;/code&gt; überschreibt sie.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;AGENT_TOKEN_SCOPE=workflows&lt;/code&gt; oder &lt;code&gt;actions&lt;/code&gt; fordert einen erhöhten &lt;a href="../../guides/scopes/"&gt;Scope&lt;/a&gt;
+an. &lt;code&gt;agent-commit&lt;/code&gt;, &lt;code&gt;agent-gh&lt;/code&gt;, der git-Credential-Helper und &lt;code&gt;agent-run&lt;/code&gt; beachten ihn, weil sie
+&lt;code&gt;agent-token&lt;/code&gt; aufrufen. Ein Token mit Scope wird getrennt vom Default-Token in
+&lt;code&gt;repos/&amp;lt;owner&amp;gt;__&amp;lt;repo&amp;gt;@&amp;lt;scope&amp;gt;.json&lt;/code&gt; zwischengespeichert. Der Broker gewährt den Scope nur, wenn
+der Login höchstens 10 Minuten alt ist: Führen Sie zuerst &lt;code&gt;agent-token --login&lt;/code&gt; aus.&lt;/p&gt;
 &lt;p&gt;Alle Aufrufe außer &lt;code&gt;--login&lt;/code&gt; setzen &lt;code&gt;AGENT_TOKEN_NONINTERACTIVE=1&lt;/code&gt; und scheitern mit
 &lt;code&gt;run: agent-token --login&lt;/code&gt;, statt auf einen Device-Code zu warten, den niemand sieht.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="agent-token-git-credential"&gt;&lt;code&gt;agent-token-git-credential&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="agent-token-git-credential"&gt;&lt;/span&gt;
@@ -277,7 +282,7 @@ ein einfaches &lt;code&gt;git commit&lt;/code&gt; mit den Argumenten aus.&lt;/p&
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;Repository-Berechtigungen&lt;/td&gt;
-&lt;td&gt;Contents RW, Pull requests RW, Issues RW, Metadata R&lt;/td&gt;
+&lt;td&gt;Contents RW, Pull requests RW, Issues RW, Metadata R; Workflows RW oder Actions RW nur für &lt;a href="../scopes/"&gt;Scopes&lt;/a&gt;&lt;/td&gt;
 &lt;td&gt;keine&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
@@ -313,9 +318,11 @@ Entwickler handeln.&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;Repository permissions:&lt;/strong&gt; Contents, Pull requests und Issues &lt;strong&gt;Read and write&lt;/strong&gt;, Metadata
 &lt;strong&gt;Read-only&lt;/strong&gt;. Alles andere &lt;strong&gt;No access&lt;/strong&gt;, insbesondere:
 &lt;ul&gt;
-&lt;li&gt;Workflows, damit ein Agent die CI nicht ändern kann, um seine Rechte auszuweiten.&lt;/li&gt;
-&lt;li&gt;Administration, Secrets, Environments und Actions, damit er weder Repositories noch Secrets
-verwalten kann.&lt;/li&gt;
+&lt;li&gt;Workflows und Actions, es sei denn, das Deployment aktiviert den &lt;a href="../scopes/"&gt;Scope&lt;/a&gt;
+&lt;code&gt;workflows&lt;/code&gt; oder &lt;code&gt;actions&lt;/code&gt;, und dann erst nach den dort genannten Voraussetzungen für das
+Repository. Default-Tokens bekommen sie nie.&lt;/li&gt;
+&lt;li&gt;Administration, Secrets und Environments, damit er weder Repositories noch Secrets verwalten
+kann.&lt;/li&gt;
 &lt;li&gt;Checks und Statuses, damit er einen erforderlichen Check nicht als grün melden kann.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
@@ -333,7 +340,8 @@ dürfen.&lt;/li&gt;
 &lt;a href="../review-rules/"&gt;Review-Regeln&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Der Broker fordert pro Token nur die vier Berechtigungen an, deshalb erweitert eine größere
 Berechtigung der App nichts für Agenten. &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; (Chart: &lt;code&gt;config.agentPermissions&lt;/code&gt;)
-ändert diese Menge; jede Installation muss jede darin enthaltene Berechtigung akzeptiert haben,
+ändert diese Menge. &lt;code&gt;AGENT_SCOPES&lt;/code&gt; (Chart: &lt;code&gt;config.scopes&lt;/code&gt;) ergänzt Workflows oder Actions für
+Tokens, die sie anfordern. Jede Installation muss jede angeforderte Berechtigung akzeptiert haben,
 sonst verweigert GitHub das Token. Halten Sie die App minimal: Der private Schlüssel allein kann
 Tokens mit allem ausstellen, was die App hat.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="login-app"&gt;Login-App&lt;span class="hx:absolute hx:-mt-20" id="login-app"&gt;&lt;/span&gt;
@@ -505,7 +513,12 @@ data-copied-label="Kopiert!"
 &lt;/div&gt;
 &lt;p&gt;Eine Anfrage muss je einem Muster jeder konfigurierten Liste entsprechen. Leere Listen schränken
 nichts ein. Läufe für Pull Requests tragen &lt;code&gt;ref: refs/pull/&amp;lt;n&amp;gt;/merge&lt;/code&gt;, daher sperrt &lt;code&gt;allowedRefs&lt;/code&gt;
-ohne &lt;code&gt;refs/pull/*&lt;/code&gt; Agenten in Pull Requests.&lt;/p&gt;</description></item><item><title>Client-Umgebung</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/client-env/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/client-env/</guid><description>
+ohne &lt;code&gt;refs/pull/*&lt;/code&gt; Agenten in Pull Requests.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="request-a-scope"&gt;Einen Scope anfordern&lt;span class="hx:absolute hx:-mt-20" id="request-a-scope"&gt;&lt;/span&gt;
+&lt;a href="#request-a-scope" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Ein Workflow erhält den &lt;a href="../scopes/"&gt;Scope&lt;/a&gt; &lt;code&gt;workflows&lt;/code&gt; oder &lt;code&gt;actions&lt;/code&gt; mit &lt;code&gt;&amp;quot;scope&amp;quot;:&amp;quot;workflows&amp;quot;&lt;/code&gt;
+im Request-Body, aber nur, wenn das Deployment ihn aktiviert und der &lt;code&gt;job_workflow_ref&lt;/code&gt; des
+Workflows zu &lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt; passt. Diese Liste ist standardmäßig leer, also
+bekommt kein Workflow einen Scope.&lt;/p&gt;</description></item><item><title>Client-Umgebung</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/client-env/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/client-env/</guid><description>
 &lt;p&gt;Variablen, die die Client-Skripte und &lt;code&gt;agent-run&lt;/code&gt; lesen.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -530,6 +543,11 @@ ohne &lt;code&gt;refs/pull/*&lt;/code&gt; Agenten in Pull Requests.&lt;/p&gt;</d
 &lt;td&gt;&lt;code&gt;AGENT_TOKEN_NONINTERACTIVE&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;agent-token&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;1&lt;/code&gt; scheitert, statt einen Device Flow zu starten. Wird von den übrigen Skripten gesetzt.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;AGENT_TOKEN_SCOPE&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;agent-token&lt;/code&gt; und die darauf aufbauenden Skripte, &lt;code&gt;agent-run&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;workflows&lt;/code&gt; oder &lt;code&gt;actions&lt;/code&gt;: fordert diesen &lt;a href="../../guides/scopes/"&gt;Scope&lt;/a&gt; an. Braucht einen Login der letzten 10 Minuten. Standard: kein Scope.&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;code&gt;XDG_CACHE_HOME&lt;/code&gt;&lt;/td&gt;
@@ -636,6 +654,18 @@ konfigurierten Berechtigungen. Abgesehen von Metadata sind das standardmäßig C
 requests und Issues. Es hat keine Berechtigungen für Workflows, Administration, Secrets oder
 Statuses, kann also weder die CI ändern noch das Repository verwalten noch einen erforderlichen
 Check als grün melden.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="scopes-keep-editing-and-running-apart"&gt;Scopes trennen Bearbeiten und Ausführen&lt;span class="hx:absolute hx:-mt-20" id="scopes-keep-editing-and-running-apart"&gt;&lt;/span&gt;
+&lt;a href="#scopes-keep-editing-and-running-apart" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Zwei optionale &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt; fügen je eine Berechtigung hinzu, jeweils für ein
+einzelnes Token: &lt;code&gt;workflows&lt;/code&gt; lässt einen Agent die CI ändern, &lt;code&gt;actions&lt;/code&gt; lässt ihn Workflows
+ausführen. Kein Token hat beides, und der Broker startet nicht, wenn ein Scope beides enthielte.
+Ein Entwickler erhält einen erhöhten Scope nur innerhalb von 10 Minuten nach einem frischen
+Device-Flow-Login, sodass ein Agent sich mit einem zwischengespeicherten Login nicht selbst
+höherstufen kann. Ein Workflow erhält ihn nur, wenn sein &lt;code&gt;job_workflow_ref&lt;/code&gt; in
+&lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt; steht.&lt;/p&gt;
+&lt;p&gt;Getrennte Tokens trennen Bearbeiten und Ausführen nicht: Ein gepushter Workflow läuft über seinen
+&lt;code&gt;push&lt;/code&gt;- oder &lt;code&gt;pull_request&lt;/code&gt;-Trigger ohne &lt;code&gt;actions: write&lt;/code&gt;. Ein Repository schützt, dass Code aus
+Agent-Branches ohne Privilegien läuft, bis ein Mensch ihn mergt. Der Broker erzwingt die
+&lt;a href="../../guides/scopes/#before-enabling-workflows-on-a-repository"&gt;Voraussetzungen&lt;/a&gt; nicht.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="humans-stay-in-the-loop"&gt;Menschen bleiben beteiligt&lt;span class="hx:absolute hx:-mt-20" id="humans-stay-in-the-loop"&gt;&lt;/span&gt;
 &lt;a href="#humans-stay-in-the-loop" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Die Agent-App kann Pull Requests freigeben, und mit Schreibrechten auf Inhalte würden ihre
 Freigaben auf erforderliche Reviews angerechnet. Jedes Repository, auf dem sie installiert ist,
@@ -798,6 +828,18 @@ Claude-Code-Plugin blockiert der Guard &lt;code&gt;git commit&lt;/code&gt; und v
 &lt;td&gt;Berechtigungen jedes Agent-Tokens als &lt;code&gt;name:level,...&lt;/code&gt;, Level &lt;code&gt;read&lt;/code&gt; oder &lt;code&gt;write&lt;/code&gt;.&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
+&lt;td&gt;&lt;code&gt;AGENT_SCOPES&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;config.scopes&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;leer: keine&lt;/td&gt;
+&lt;td&gt;Kommagetrennte optionale Scopes, die Clients anfordern dürfen: &lt;code&gt;workflows&lt;/code&gt;, &lt;code&gt;actions&lt;/code&gt;. Siehe &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;leer: keine&lt;/td&gt;
+&lt;td&gt;Kommagetrennte Glob-Muster für den Claim &lt;code&gt;job_workflow_ref&lt;/code&gt; von Workflows, die einen Scope anfordern dürfen.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
 &lt;td&gt;&lt;code&gt;LISTEN_ADDR&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;:8080&lt;/code&gt;&lt;/td&gt;
@@ -814,6 +856,11 @@ Claude-Code-Plugin blockiert der Guard &lt;code&gt;git commit&lt;/code&gt; und v
 &lt;p&gt;In Glob-Mustern steht &lt;code&gt;*&lt;/code&gt; für beliebige Zeichen einschließlich &lt;code&gt;/&lt;/code&gt;. &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; ersetzt die
 Standardmenge: Listen Sie alle Berechtigungen auf, und die Agent-App muss jede davon erhalten
 haben, sonst verweigert GitHub das Token. Ein ungültiger Eintrag stoppt den Broker beim Start.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;workflows&lt;/code&gt; fügt der Menge aus &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; &lt;code&gt;workflows: write&lt;/code&gt; hinzu, &lt;code&gt;actions&lt;/code&gt; fügt
+&lt;code&gt;actions: write&lt;/code&gt; hinzu. Die Agent-App muss jede Berechtigung erhalten haben, die ein Scope
+ergänzt. Der Broker startet nicht, wenn ein aktivierter Scope &lt;code&gt;workflows&lt;/code&gt; und &lt;code&gt;actions: write&lt;/code&gt;
+zusammen enthielte; verschieben Sie &lt;code&gt;actions: write&lt;/code&gt; aus &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; in den Scope
+&lt;code&gt;actions&lt;/code&gt;, bevor Sie &lt;code&gt;workflows&lt;/code&gt; aktivieren.&lt;/p&gt;
 &lt;p&gt;Der Broker braucht ausgehenden Zugriff nur auf &lt;code&gt;api.github.com&lt;/code&gt; und
 &lt;code&gt;token.actions.githubusercontent.com&lt;/code&gt;. Er protokolliert jedes ausgestellte und abgelehnte Token als
 strukturierte Logzeile mit Aufrufer und Repository.&lt;/p&gt;</description></item><item><title>Installationsskript</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/install-script/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/install-script/</guid><description>
@@ -871,7 +918,120 @@ data-copied-label="Kopiert!"
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;p&gt;Jedes &lt;code&gt;v*&lt;/code&gt;-Release enthält &lt;code&gt;agent-token-&amp;lt;version&amp;gt;.tar.gz&lt;/code&gt; (die Skripte in &lt;code&gt;bin/&lt;/code&gt;) und
-&lt;code&gt;checksums.txt&lt;/code&gt;. Das Skript braucht &lt;code&gt;bash&lt;/code&gt;, &lt;code&gt;curl&lt;/code&gt; und &lt;code&gt;jq&lt;/code&gt;; &lt;code&gt;gh&lt;/code&gt; wird für &lt;code&gt;agent-gh&lt;/code&gt; gebraucht.&lt;/p&gt;</description></item><item><title>Container</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/container/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/container/</guid><description>
+&lt;code&gt;checksums.txt&lt;/code&gt;. Das Skript braucht &lt;code&gt;bash&lt;/code&gt;, &lt;code&gt;curl&lt;/code&gt; und &lt;code&gt;jq&lt;/code&gt;; &lt;code&gt;gh&lt;/code&gt; wird für &lt;code&gt;agent-gh&lt;/code&gt; gebraucht.&lt;/p&gt;</description></item><item><title>Workflows mit Scopes bearbeiten oder ausführen</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/guides/scopes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/guides/scopes/</guid><description>
+&lt;p&gt;Agent-Tokens können committen, pushen, Pull Requests öffnen und an Issues arbeiten. Zwei optionale
+Scopes fügen je eine Berechtigung hinzu, jeweils für ein einzelnes Token
+(&lt;a href="https://github.com/pflege-de-labs/token-broker/blob/main/docs/adr/0016-agent-token-scopes.md" target="_blank" rel="noopener"&gt;ADR 16&lt;/a&gt;):&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Scope&lt;/th&gt;
+&lt;th&gt;Fügt hinzu&lt;/th&gt;
+&lt;th&gt;Wofür&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;default&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;nichts&lt;/td&gt;
+&lt;td&gt;alles andere&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;workflows&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;workflows: write&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Änderungen unter &lt;code&gt;.github/workflows/&lt;/code&gt; pushen&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;actions&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;actions: write&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;workflow_dispatch&lt;/code&gt;, Jobs erneut ausführen&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Kein Token hat beides: Der Broker startet nicht, wenn ein Scope beides enthielte.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="enable"&gt;Aktivieren&lt;span class="hx:absolute hx:-mt-20" id="enable"&gt;&lt;/span&gt;
+&lt;a href="#enable" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Erteilen Sie der Agent-App die Berechtigung (&lt;strong&gt;Workflows: Read and write&lt;/strong&gt;,
+&lt;strong&gt;Actions: Read and write&lt;/strong&gt;) und akzeptieren Sie sie in jeder Installation
+(&lt;a href="../github-apps/"&gt;GitHub-Apps einrichten&lt;/a&gt;). GitHub verweigert Tokens für Installationen, die
+nicht akzeptiert haben.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Setzen Sie die Chart-Werte:&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-yaml" data-lang="yaml"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nt"&gt;config&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;scopes&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="l"&gt;workflows] &lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="c"&gt;# AGENT_SCOPES&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;actionsOidc&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="c"&gt;# Workflows that may request a scope (ACTIONS_SCOPE_WORKFLOWS); empty: none.&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;scopeWorkflows&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;#34;acme/app/.github/workflows/release.yml@refs/heads/main&amp;#34;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Enthält &lt;code&gt;agentPermissions&lt;/code&gt; den Eintrag &lt;code&gt;actions: write&lt;/code&gt;, entfernen Sie ihn und aktivieren Sie
+stattdessen den Scope &lt;code&gt;actions&lt;/code&gt;. Sonst hätte der Scope &lt;code&gt;workflows&lt;/code&gt; beides, und der Broker
+startet nicht.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 data-hextra-search-id="use"&gt;Verwenden&lt;span class="hx:absolute hx:-mt-20" id="use"&gt;&lt;/span&gt;
+&lt;a href="#use" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Entwickler: Melden Sie sich neu an und fordern Sie den Scope innerhalb von 10 Minuten an. Der
+Broker prüft, dass der Login so aktuell ist, damit ein Agent sich mit einem zwischengespeicherten
+Login nicht selbst höherstufen kann.&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --login &lt;span class="c1"&gt;# in Claude Code: ! agent-token --login&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nv"&gt;AGENT_TOKEN_SCOPE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;workflows agent-commit -m &lt;span class="s2"&gt;&amp;#34;ci: …&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nv"&gt;AGENT_TOKEN_SCOPE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;actions agent-gh run rerun &lt;span class="m"&gt;1234&lt;/span&gt; --failed &lt;span class="c1"&gt;# `gh` im Devcontainer&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Code kopieren"
+aria-label="Code kopieren"
+data-copied-label="Kopiert!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Das erhöhte Token wird pro Scope für seine eine Stunde zwischengespeichert. Aufrufe ohne
+&lt;code&gt;AGENT_TOKEN_SCOPE&lt;/code&gt; nutzen weiter das Default-Token. &lt;code&gt;AGENT_TOKEN_SCOPE=workflows agent-run&lt;/code&gt;
+führt eine ganze Sitzung mit dem Scope aus; sie endet nach einer Stunde, weil die Erneuerung einen
+weiteren frischen Login braucht.&lt;/p&gt;
+&lt;p&gt;Workflows: Fügen Sie &lt;code&gt;&amp;quot;scope&amp;quot;:&amp;quot;workflows&amp;quot;&lt;/code&gt; zum Request-Body hinzu. Nur Workflows, die zu
+&lt;code&gt;scopeWorkflows&lt;/code&gt; passen, erhalten ihn. Siehe &lt;a href="../actions/"&gt;Agent-Tokens in GitHub Actions holen&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="before-enabling-workflows-on-a-repository"&gt;Bevor Sie &lt;code&gt;workflows&lt;/code&gt; für ein Repository aktivieren&lt;span class="hx:absolute hx:-mt-20" id="before-enabling-workflows-on-a-repository"&gt;&lt;/span&gt;
+&lt;a href="#before-enabling-workflows-on-a-repository" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Ein gepushter Workflow läuft über seinen &lt;code&gt;push&lt;/code&gt;- oder &lt;code&gt;pull_request&lt;/code&gt;-Trigger. Er braucht kein
+&lt;code&gt;actions: write&lt;/code&gt;. Ein Agent mit &lt;code&gt;workflows&lt;/code&gt; kann also Code ausführen, den er selbst geschrieben
+hat, mit allem, was dieser Branch erreicht. Machen Sie Agent-Branches zuerst unprivilegiert:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Secrets nur in &lt;strong&gt;Environments&lt;/strong&gt;, deren Deployment-Branch-Richtlinie nur geschützte Branches
+zulässt, mit erforderlichen Reviewern für Produktion. Keine Repository- oder
+Organisations-Secrets.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ACTIONS_ALLOWED_REFS&lt;/code&gt; auf geschützte Branches beschränkt, damit ein Workflow auf einem
+Agent-Branch selbst kein Agent-Token bekommt.&lt;/li&gt;
+&lt;li&gt;Cloud-OIDC-Vertrauensrichtlinien an einen &lt;code&gt;ref&lt;/code&gt; oder ein &lt;code&gt;environment&lt;/code&gt; gebunden, nicht nur an
+das Repository.&lt;/li&gt;
+&lt;li&gt;Standardberechtigungen des &lt;code&gt;GITHUB_TOKEN&lt;/code&gt; der Organisation schreibgeschützt; &lt;strong&gt;Allow GitHub
+Actions to create and approve pull requests&lt;/strong&gt; aus.&lt;/li&gt;
+&lt;li&gt;Selbst gehostete Runner-Gruppen auf ausgewählte Workflows auf geschützten Branches beschränkt.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.github/workflows/&lt;/code&gt; gehört in &lt;code&gt;CODEOWNERS&lt;/code&gt; einem menschlichen Team. Code-Owner-Review ist
+bereits Pflicht (&lt;a href="../review-rules/"&gt;Review-Regeln setzen&lt;/a&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 data-hextra-search-id="triggering-without-actions"&gt;Auslösen ohne &lt;code&gt;actions&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="triggering-without-actions"&gt;&lt;/span&gt;
+&lt;a href="#triggering-without-actions" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;code&gt;repository_dispatch&lt;/code&gt; braucht nur &lt;code&gt;contents: write&lt;/code&gt;, das jedes Agent-Token hat, und führt die
+Version eines Workflows aus dem Default-Branch aus. Repositories, in denen Agenten geprüfte
+Workflows starten sollen, können &lt;code&gt;on: repository_dispatch&lt;/code&gt; ergänzen, statt &lt;code&gt;actions&lt;/code&gt; zu
+aktivieren. Ein solcher Workflow darf keinen Ref aus &lt;code&gt;client_payload&lt;/code&gt; auschecken, solange Secrets
+verfügbar sind.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;actions: write&lt;/code&gt; erlaubt dem Agent außerdem, Runs und Logs abzubrechen und zu löschen, Workflows
+zu deaktivieren und Caches zu löschen.&lt;/p&gt;</description></item><item><title>Container</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/container/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/getting-started/container/</guid><description>
 &lt;p&gt;&lt;code&gt;agent-run&lt;/code&gt; startet Claude Code in einem Container, dessen einzige GitHub-Zugangsdaten ein
 Agent-Token für ein Repository sind. Ihre SSH-Schlüssel, Ihr &lt;code&gt;gh&lt;/code&gt;-Login, Ihre git-Konfiguration und
 das Login-Token des Brokers bleiben auf Ihrem Rechner.&lt;/p&gt;
@@ -1016,7 +1176,7 @@ Terminal aus.&lt;/li&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;Authorization: Bearer &amp;lt;login token or Actions OIDC token&amp;gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;Content-Type: application/json
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;{&amp;#34;repo&amp;#34;: &amp;#34;my-org/my-repo&amp;#34;}&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;{&amp;#34;repo&amp;#34;: &amp;#34;my-org/my-repo&amp;#34;, &amp;#34;scope&amp;#34;: &amp;#34;default&amp;#34;}&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
 &lt;button
 class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
 title="Code kopieren"
@@ -1028,6 +1188,7 @@ data-copied-label="Kopiert!"
 &lt;/button&gt;
 &lt;/div&gt;
 &lt;/div&gt;
+&lt;p&gt;&lt;code&gt;scope&lt;/code&gt; ist optional: &lt;code&gt;default&lt;/code&gt;, &lt;code&gt;workflows&lt;/code&gt; oder &lt;code&gt;actions&lt;/code&gt;. Siehe &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Das Bearer-Token bestimmt den Weg: Ein Token mit zwei Punkten ist ein GitHub-Actions-OIDC-Token,
 alles andere ein User-Token der Login-App. Der Body ist auf 4096 Bytes begrenzt.&lt;/p&gt;
 &lt;p&gt;Antwort (200):&lt;/p&gt;
@@ -1055,7 +1216,7 @@ data-copied-label="Kopiert!"
 &lt;tbody&gt;
 &lt;tr&gt;
 &lt;td&gt;400&lt;/td&gt;
-&lt;td&gt;Ungültiges JSON, oder &lt;code&gt;repo&lt;/code&gt; ist nicht &lt;code&gt;owner/name&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Ungültiges JSON, &lt;code&gt;repo&lt;/code&gt; ist nicht &lt;code&gt;owner/name&lt;/code&gt;, oder &lt;code&gt;scope&lt;/code&gt; ist unbekannt oder nicht aktiviert&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;401&lt;/td&gt;
@@ -1063,7 +1224,7 @@ data-copied-label="Kopiert!"
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;403&lt;/td&gt;
-&lt;td&gt;Repository außerhalb von &lt;code&gt;GITHUB_ORG&lt;/code&gt;; App nicht auf dem Repository installiert; Actions-Token für ein anderes Repository oder einen anderen Subject; Ref oder Workflow nicht erlaubt; der Entwickler hat keinen Push-Zugriff&lt;/td&gt;
+&lt;td&gt;Repository außerhalb von &lt;code&gt;GITHUB_ORG&lt;/code&gt;; App nicht auf dem Repository installiert; Actions-Token für ein anderes Repository oder einen anderen Subject; Ref oder Workflow nicht erlaubt; der Entwickler hat keinen Push-Zugriff; ein erhöhter &lt;code&gt;scope&lt;/code&gt; ohne Login der letzten 10 Minuten (die Meldung verweist auf &lt;code&gt;agent-token --login&lt;/code&gt;) oder für einen Workflow außerhalb von &lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;500&lt;/td&gt;
@@ -1079,6 +1240,10 @@ data-copied-label="Kopiert!"
 &lt;code&gt;admin&lt;/code&gt;-Zugriff auf das Repository hat. Bei einem Actions-Token müssen der Claim &lt;code&gt;repository&lt;/code&gt; und
 der Claim &lt;code&gt;sub&lt;/code&gt; beide das angeforderte Repository nennen, und konfigurierte Positivlisten für Refs
 und Workflows müssen passen.&lt;/p&gt;
+&lt;p&gt;Ein erhöhter Scope verlangt mehr. Bei einem Login-Token darf der Login höchstens 10 Minuten alt
+sein. Der Broker leitet das aus &lt;code&gt;expires_at&lt;/code&gt; des Tokens minus 8 Stunden ab; ein Token ohne Ablauf
+wird abgelehnt. Bei einem Actions-Token muss &lt;code&gt;job_workflow_ref&lt;/code&gt; zu &lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;
+passen; leer lässt keinen zu.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="post-tokenactions"&gt;&lt;code&gt;POST /token/actions&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="post-tokenactions"&gt;&lt;/span&gt;
 &lt;a href="#post-tokenactions" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Gleiche Anfrage und Antwort wie &lt;code&gt;/token&lt;/code&gt;, aber ein Bearer-Token, das nicht wie ein JWT aufgebaut
 ist, bekommt 401 &lt;code&gt;only GitHub Actions OIDC tokens are accepted here&lt;/code&gt;. Leiten Sie auf einer
@@ -1226,7 +1391,9 @@ Signaturen verlangen, die Commits akzeptieren.&lt;/li&gt;
 SSH-Agent wird weiterhin weitergeleitet: Die Firewall blockiert Port 22, aber er kann noch
 signieren. Für volle Isolation nutzen Sie &lt;a href="../container/"&gt;&lt;code&gt;agent-run&lt;/code&gt;&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;Ein git Worktree funktioniert nicht als Workspace, weil sein &lt;code&gt;.git&lt;/code&gt; außerhalb des Mounts zeigt.
-Öffnen Sie einen Klon.&lt;/li&gt;
+Öffnen Sie einen Klon und legen Sie Worktrees darin an, mit
+&lt;code&gt;git worktree add --relative-paths .worktrees/&amp;lt;name&amp;gt; -b &amp;lt;branch&amp;gt;&lt;/code&gt; (git 2.48+, &lt;code&gt;/.worktrees/&lt;/code&gt; in
+&lt;code&gt;.git/info/exclude&lt;/code&gt;); ihre Pfade funktionieren dann im Container und auf dem Host.&lt;/li&gt;
 &lt;li&gt;Netzwerkzugriff über die Positivliste hinaus braucht eine Änderung an &lt;code&gt;allowed-domains&lt;/code&gt; und einen
 Rebuild.&lt;/li&gt;
 &lt;/ul&gt;
@@ -1466,6 +1633,11 @@ data-copied-label="Kopiert!"
 &lt;td&gt;&lt;code&gt;{}&lt;/code&gt;: die Standardmenge&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
+&lt;td&gt;&lt;code&gt;config.scopes&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;AGENT_SCOPES&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;[]&lt;/code&gt;: keine&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
 &lt;td&gt;&lt;code&gt;config.actionsOidc.audience&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;ACTIONS_OIDC_AUDIENCE&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;token-broker&lt;/code&gt;&lt;/td&gt;
@@ -1485,11 +1657,21 @@ data-copied-label="Kopiert!"
 &lt;td&gt;&lt;code&gt;ACTIONS_ALLOWED_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;[]&lt;/code&gt;&lt;/td&gt;
 &lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;[]&lt;/code&gt;: keine&lt;/td&gt;
+&lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;&lt;code&gt;config.agentPermissions&lt;/code&gt; ist eine Map, zum Beispiel
 &lt;code&gt;{contents: write, pull_requests: write, issues: write, metadata: read, actions: write}&lt;/code&gt;. Listen Sie
 die vollständige Menge auf; die Agent-App muss alle erhalten haben.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;config.scopes&lt;/code&gt; ist eine Liste aus &lt;code&gt;workflows&lt;/code&gt; und &lt;code&gt;actions&lt;/code&gt;; jeder Eintrag fügt dieser Menge eine
+Berechtigung hinzu, die die App erhalten haben muss. Der Broker startet nicht, wenn ein Scope
+&lt;code&gt;workflows&lt;/code&gt; und &lt;code&gt;actions: write&lt;/code&gt; zusammen enthielte. &lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt; listet
+die Muster für &lt;code&gt;job_workflow_ref&lt;/code&gt; von Workflows, die einen Scope anfordern dürfen; leer heißt
+keine. Siehe &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="secret"&gt;Secret&lt;span class="hx:absolute hx:-mt-20" id="secret"&gt;&lt;/span&gt;
 &lt;a href="#secret" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;table&gt;
 &lt;thead&gt;
@@ -1675,7 +1857,7 @@ Einheiten- und Typ-Suffixe. Im Chart rendert &lt;code&gt;metrics.serviceMonitor.
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;Beide tragen zwei Attribute:&lt;/p&gt;
+&lt;p&gt;Beide tragen drei Attribute:&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -1692,6 +1874,10 @@ Einheiten- und Typ-Suffixe. Im Chart rendert &lt;code&gt;metrics.serviceMonitor.
 &lt;td&gt;&lt;code&gt;via&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;actions&lt;/code&gt; (Actions-OIDC-Token), &lt;code&gt;device&lt;/code&gt; (Login-Token), &lt;code&gt;unknown&lt;/code&gt; (abgewiesen, bevor der Aufrufer bekannt ist)&lt;/td&gt;
 &lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;scope&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;default&lt;/code&gt;, &lt;code&gt;workflows&lt;/code&gt;, &lt;code&gt;actions&lt;/code&gt;, &lt;code&gt;unknown&lt;/code&gt; (die Anfrage scheiterte, bevor der Scope geprüft war)&lt;/td&gt;
+&lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;&lt;code&gt;broker.token.requests&lt;/code&gt; zählt Token-Anfragen nach Ergebnis. &lt;code&gt;broker.token.duration&lt;/code&gt; erfasst, wie
@@ -1706,5 +1892,14 @@ geändert hat, und enthält die Assets: Das signierte Container-Image wird unter
 &lt;code&gt;agent-token-&amp;lt;version&amp;gt;.tar.gz&lt;/code&gt; mit einer &lt;code&gt;checksums.txt&lt;/code&gt; an.&lt;/p&gt;
 &lt;p&gt;Das Helm-Chart wird separat versioniert und unter &lt;code&gt;oci://ghcr.io/pflege-de-labs/charts&lt;/code&gt;
 veröffentlicht, wenn sich &lt;code&gt;version&lt;/code&gt; in seiner &lt;code&gt;Chart.yaml&lt;/code&gt; auf &lt;code&gt;main&lt;/code&gt; ändert.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="unreleased"&gt;Unreleased&lt;span class="hx:absolute hx:-mt-20" id="unreleased"&gt;&lt;/span&gt;
+&lt;a href="#unreleased" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;Optionale Agent-Token-Scopes &lt;code&gt;workflows&lt;/code&gt; und &lt;code&gt;actions&lt;/code&gt;, angefordert mit &lt;code&gt;scope&lt;/code&gt; in
+&lt;code&gt;POST /token&lt;/code&gt; oder &lt;code&gt;AGENT_TOKEN_SCOPE&lt;/code&gt; im Client und aktiviert mit &lt;code&gt;AGENT_SCOPES&lt;/code&gt; (Chart
+&lt;code&gt;config.scopes&lt;/code&gt;) und &lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt; (Chart &lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt;).
+Siehe &lt;a href="../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;agent-token --login&lt;/code&gt; startet immer einen neuen Device Flow.&lt;/li&gt;
+&lt;li&gt;Audit-Log und Token-Metriken tragen ein Attribut &lt;code&gt;scope&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
 &lt;p&gt;Auch diese Dokumentation ist versioniert: Wählen Sie im Menü &lt;strong&gt;Versionen&lt;/strong&gt; die Version, die Sie
 betreiben.&lt;/p&gt;</description></item></channel></rss>

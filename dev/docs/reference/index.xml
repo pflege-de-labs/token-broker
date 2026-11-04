@@ -35,7 +35,7 @@ Claude Code plugin. They need &lt;code&gt;bash&lt;/code&gt;, &lt;code&gt;curl&lt
 &lt;h2 data-hextra-search-id="agent-token"&gt;&lt;code&gt;agent-token&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="agent-token"&gt;&lt;/span&gt;
 &lt;a href="#agent-token" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
 &lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token org/repo prints a 1h agent token for that repository
-&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --login logs in via the login app&amp;#39;s device flow (interactive)
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --login always starts a new device flow (interactive)
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --check exits 1 unless a login is cached
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --permissions org/repo prints the permissions GitHub granted that token (JSON)
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --version prints the version (from v0.7.0)&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
@@ -53,6 +53,11 @@ data-copied-label="Copied!"
 &lt;p&gt;The login token is cached in &lt;code&gt;~/.cache/agent-token/login.json&lt;/code&gt; (mode 600) for 8 hours. A token
 per repository is reused until 5 minutes before it expires. Needs &lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt;. The login
 app&amp;rsquo;s client ID comes from the broker (&lt;code&gt;GET /login-app&lt;/code&gt;); &lt;code&gt;LOGIN_APP_CLIENT_ID&lt;/code&gt; overrides it.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;AGENT_TOKEN_SCOPE=workflows&lt;/code&gt; or &lt;code&gt;actions&lt;/code&gt; requests an elevated &lt;a href="../../guides/scopes/"&gt;scope&lt;/a&gt;.
+&lt;code&gt;agent-commit&lt;/code&gt;, &lt;code&gt;agent-gh&lt;/code&gt;, the git credential helper and &lt;code&gt;agent-run&lt;/code&gt; honor it, because they call
+&lt;code&gt;agent-token&lt;/code&gt;. A scoped token is cached apart from the default one, in
+&lt;code&gt;repos/&amp;lt;owner&amp;gt;__&amp;lt;repo&amp;gt;@&amp;lt;scope&amp;gt;.json&lt;/code&gt;. The broker grants the scope only if the login is at most 10
+minutes old: run &lt;code&gt;agent-token --login&lt;/code&gt; first.&lt;/p&gt;
 &lt;p&gt;Calls other than &lt;code&gt;--login&lt;/code&gt; set &lt;code&gt;AGENT_TOKEN_NONINTERACTIVE=1&lt;/code&gt; and fail with
 &lt;code&gt;run: agent-token --login&lt;/code&gt; instead of waiting for a device code nobody sees.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="agent-token-git-credential"&gt;&lt;code&gt;agent-token-git-credential&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="agent-token-git-credential"&gt;&lt;/span&gt;
@@ -137,6 +142,11 @@ pushes it and moves the local branch onto it. Details and limits:
 &lt;td&gt;&lt;code&gt;AGENT_TOKEN_NONINTERACTIVE&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;agent-token&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;1&lt;/code&gt; fails instead of starting a device flow. Set by the other scripts.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;AGENT_TOKEN_SCOPE&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;agent-token&lt;/code&gt; and the scripts built on it, &lt;code&gt;agent-run&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;workflows&lt;/code&gt; or &lt;code&gt;actions&lt;/code&gt;: request that &lt;a href="../../guides/scopes/"&gt;scope&lt;/a&gt;. Needs a login from the last 10 minutes. Default: no scope.&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;code&gt;XDG_CACHE_HOME&lt;/code&gt;&lt;/td&gt;
@@ -257,6 +267,18 @@ its &lt;a href="../helm-values/"&gt;values&lt;/a&gt;.&lt;/p&gt;
 &lt;td&gt;Permissions of every agent token, as &lt;code&gt;name:level,...&lt;/code&gt;, level &lt;code&gt;read&lt;/code&gt; or &lt;code&gt;write&lt;/code&gt;.&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
+&lt;td&gt;&lt;code&gt;AGENT_SCOPES&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;config.scopes&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;empty: none&lt;/td&gt;
+&lt;td&gt;Comma-separated opt-in scopes clients may request: &lt;code&gt;workflows&lt;/code&gt;, &lt;code&gt;actions&lt;/code&gt;. See &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;empty: none&lt;/td&gt;
+&lt;td&gt;Comma-separated glob patterns for the &lt;code&gt;job_workflow_ref&lt;/code&gt; claim of workflows that may request a scope.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
 &lt;td&gt;&lt;code&gt;LISTEN_ADDR&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;:8080&lt;/code&gt;&lt;/td&gt;
@@ -273,6 +295,10 @@ its &lt;a href="../helm-values/"&gt;values&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;In glob patterns &lt;code&gt;*&lt;/code&gt; matches any characters, including &lt;code&gt;/&lt;/code&gt;. &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; replaces the
 default set: list all permissions, and the agent app must have been granted each of them, or
 GitHub refuses the token. An invalid entry stops the broker at start.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;workflows&lt;/code&gt; adds &lt;code&gt;workflows: write&lt;/code&gt; and &lt;code&gt;actions&lt;/code&gt; adds &lt;code&gt;actions: write&lt;/code&gt; to the &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt;
+set. The agent app must be granted each permission a scope adds. The broker refuses to start if
+any enabled scope would hold &lt;code&gt;workflows&lt;/code&gt; and &lt;code&gt;actions: write&lt;/code&gt; together; move &lt;code&gt;actions: write&lt;/code&gt; from
+&lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; to the &lt;code&gt;actions&lt;/code&gt; scope before you enable &lt;code&gt;workflows&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;The broker needs outbound access to &lt;code&gt;api.github.com&lt;/code&gt; and &lt;code&gt;token.actions.githubusercontent.com&lt;/code&gt;
 only. It logs every issued and denied token as a structured log line with the caller and the
 repository.&lt;/p&gt;</description></item><item><title>Endpoints</title><link>https://pflege-de-labs.github.io/token-broker/dev/docs/reference/endpoints/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/docs/reference/endpoints/</guid><description>
@@ -324,7 +350,7 @@ repository.&lt;/p&gt;</description></item><item><title>Endpoints</title><link>ht
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;Authorization: Bearer &amp;lt;login token or Actions OIDC token&amp;gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;Content-Type: application/json
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;{&amp;#34;repo&amp;#34;: &amp;#34;my-org/my-repo&amp;#34;}&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;{&amp;#34;repo&amp;#34;: &amp;#34;my-org/my-repo&amp;#34;, &amp;#34;scope&amp;#34;: &amp;#34;default&amp;#34;}&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
 &lt;button
 class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
 title="Copy code"
@@ -336,6 +362,7 @@ data-copied-label="Copied!"
 &lt;/button&gt;
 &lt;/div&gt;
 &lt;/div&gt;
+&lt;p&gt;&lt;code&gt;scope&lt;/code&gt; is optional: &lt;code&gt;default&lt;/code&gt;, &lt;code&gt;workflows&lt;/code&gt; or &lt;code&gt;actions&lt;/code&gt;. See &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;The bearer token decides the path: a token with two dots is a GitHub Actions OIDC token, anything
 else is a user token of the login app. The body is limited to 4096 bytes.&lt;/p&gt;
 &lt;p&gt;Response (200):&lt;/p&gt;
@@ -363,7 +390,7 @@ data-copied-label="Copied!"
 &lt;tbody&gt;
 &lt;tr&gt;
 &lt;td&gt;400&lt;/td&gt;
-&lt;td&gt;Invalid JSON, or &lt;code&gt;repo&lt;/code&gt; is not &lt;code&gt;owner/name&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Invalid JSON, &lt;code&gt;repo&lt;/code&gt; is not &lt;code&gt;owner/name&lt;/code&gt;, or &lt;code&gt;scope&lt;/code&gt; is unknown or not enabled&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;401&lt;/td&gt;
@@ -371,7 +398,7 @@ data-copied-label="Copied!"
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;403&lt;/td&gt;
-&lt;td&gt;Repository outside &lt;code&gt;GITHUB_ORG&lt;/code&gt;; app not installed on the repository; Actions token for a different repository or subject; ref or workflow not allowed; the developer has no push access&lt;/td&gt;
+&lt;td&gt;Repository outside &lt;code&gt;GITHUB_ORG&lt;/code&gt;; app not installed on the repository; Actions token for a different repository or subject; ref or workflow not allowed; the developer has no push access; an elevated &lt;code&gt;scope&lt;/code&gt; without a login from the last 10 minutes (the message says to run &lt;code&gt;agent-token --login&lt;/code&gt;) or for a workflow outside &lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;500&lt;/td&gt;
@@ -386,6 +413,10 @@ data-copied-label="Copied!"
 &lt;p&gt;For a login token the broker issues a token only if the developer has &lt;code&gt;write&lt;/code&gt; or &lt;code&gt;admin&lt;/code&gt; access
 to the repository. For an Actions token both the &lt;code&gt;repository&lt;/code&gt; and the &lt;code&gt;sub&lt;/code&gt; claim must name the
 requested repository, and any configured ref and workflow allowlists must match.&lt;/p&gt;
+&lt;p&gt;An elevated scope needs more. For a login token, the login must be at most 10 minutes old. The
+broker derives that from the token&amp;rsquo;s &lt;code&gt;expires_at&lt;/code&gt; minus 8 hours; a token without expiry is
+refused. For an Actions token, &lt;code&gt;job_workflow_ref&lt;/code&gt; must match &lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;; empty
+allows none.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="post-tokenactions"&gt;&lt;code&gt;POST /token/actions&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="post-tokenactions"&gt;&lt;/span&gt;
 &lt;a href="#post-tokenactions" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Same request and response as &lt;code&gt;/token&lt;/code&gt;, but a bearer token that is not shaped like a JWT gets 401
 &lt;code&gt;only GitHub Actions OIDC tokens are accepted here&lt;/code&gt;. Forward only this path on a public route.&lt;/p&gt;
@@ -541,6 +572,11 @@ The authoritative list with comments is
 &lt;td&gt;&lt;code&gt;{}&lt;/code&gt;: the default set&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
+&lt;td&gt;&lt;code&gt;config.scopes&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;AGENT_SCOPES&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;[]&lt;/code&gt;: none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
 &lt;td&gt;&lt;code&gt;config.actionsOidc.audience&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;ACTIONS_OIDC_AUDIENCE&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;token-broker&lt;/code&gt;&lt;/td&gt;
@@ -560,11 +596,20 @@ The authoritative list with comments is
 &lt;td&gt;&lt;code&gt;ACTIONS_ALLOWED_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;[]&lt;/code&gt;&lt;/td&gt;
 &lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;[]&lt;/code&gt;: none&lt;/td&gt;
+&lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;&lt;code&gt;config.agentPermissions&lt;/code&gt; is a map, for example
 &lt;code&gt;{contents: write, pull_requests: write, issues: write, metadata: read, actions: write}&lt;/code&gt;. List the
 full set; the agent app must be granted all of them.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;config.scopes&lt;/code&gt; is a list of &lt;code&gt;workflows&lt;/code&gt; and &lt;code&gt;actions&lt;/code&gt;; each adds one permission to that set, and
+the app must be granted it. The broker does not start if a scope would hold &lt;code&gt;workflows&lt;/code&gt; and
+&lt;code&gt;actions: write&lt;/code&gt; together. &lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt; lists the &lt;code&gt;job_workflow_ref&lt;/code&gt; patterns
+of workflows that may request a scope; empty means none. See &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="secret"&gt;Secret&lt;span class="hx:absolute hx:-mt-20" id="secret"&gt;&lt;/span&gt;
 &lt;a href="#secret" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;table&gt;
 &lt;thead&gt;
@@ -683,7 +728,7 @@ suffixes. In the chart, &lt;code&gt;metrics.serviceMonitor.enabled&lt;/code&gt; 
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;Both carry two attributes:&lt;/p&gt;
+&lt;p&gt;Both carry three attributes:&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -699,6 +744,10 @@ suffixes. In the chart, &lt;code&gt;metrics.serviceMonitor.enabled&lt;/code&gt; 
 &lt;tr&gt;
 &lt;td&gt;&lt;code&gt;via&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;actions&lt;/code&gt; (Actions OIDC token), &lt;code&gt;device&lt;/code&gt; (login token), &lt;code&gt;unknown&lt;/code&gt; (rejected before the caller is known)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;scope&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;default&lt;/code&gt;, &lt;code&gt;workflows&lt;/code&gt;, &lt;code&gt;actions&lt;/code&gt;, &lt;code&gt;unknown&lt;/code&gt; (the request failed before the scope was validated)&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;

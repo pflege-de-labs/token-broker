@@ -35,7 +35,7 @@ Claude-Code-Plugins. Sie brauchen &lt;code&gt;bash&lt;/code&gt;, &lt;code&gt;cur
 &lt;h2 data-hextra-search-id="agent-token"&gt;&lt;code&gt;agent-token&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="agent-token"&gt;&lt;/span&gt;
 &lt;a href="#agent-token" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
 &lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token org/repo prints a 1h agent token for that repository
-&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --login logs in via the login app&amp;#39;s device flow (interactive)
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --login always starts a new device flow (interactive)
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --check exits 1 unless a login is cached
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --permissions org/repo prints the permissions GitHub granted that token (JSON)
 &lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --version prints the version (from v0.7.0)&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
@@ -54,6 +54,11 @@ data-copied-label="Kopiert!"
 Ein Token je Repository wird wiederverwendet, bis es in 5 Minuten abläuft. Braucht
 &lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt;. Die Client-ID der Login-App kommt vom Broker (&lt;code&gt;GET /login-app&lt;/code&gt;);
 &lt;code&gt;LOGIN_APP_CLIENT_ID&lt;/code&gt; überschreibt sie.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;AGENT_TOKEN_SCOPE=workflows&lt;/code&gt; oder &lt;code&gt;actions&lt;/code&gt; fordert einen erhöhten &lt;a href="../../guides/scopes/"&gt;Scope&lt;/a&gt;
+an. &lt;code&gt;agent-commit&lt;/code&gt;, &lt;code&gt;agent-gh&lt;/code&gt;, der git-Credential-Helper und &lt;code&gt;agent-run&lt;/code&gt; beachten ihn, weil sie
+&lt;code&gt;agent-token&lt;/code&gt; aufrufen. Ein Token mit Scope wird getrennt vom Default-Token in
+&lt;code&gt;repos/&amp;lt;owner&amp;gt;__&amp;lt;repo&amp;gt;@&amp;lt;scope&amp;gt;.json&lt;/code&gt; zwischengespeichert. Der Broker gewährt den Scope nur, wenn
+der Login höchstens 10 Minuten alt ist: Führen Sie zuerst &lt;code&gt;agent-token --login&lt;/code&gt; aus.&lt;/p&gt;
 &lt;p&gt;Alle Aufrufe außer &lt;code&gt;--login&lt;/code&gt; setzen &lt;code&gt;AGENT_TOKEN_NONINTERACTIVE=1&lt;/code&gt; und scheitern mit
 &lt;code&gt;run: agent-token --login&lt;/code&gt;, statt auf einen Device-Code zu warten, den niemand sieht.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="agent-token-git-credential"&gt;&lt;code&gt;agent-token-git-credential&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="agent-token-git-credential"&gt;&lt;/span&gt;
@@ -140,6 +145,11 @@ ein einfaches &lt;code&gt;git commit&lt;/code&gt; mit den Argumenten aus.&lt;/p&
 &lt;td&gt;&lt;code&gt;AGENT_TOKEN_NONINTERACTIVE&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;agent-token&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;1&lt;/code&gt; scheitert, statt einen Device Flow zu starten. Wird von den übrigen Skripten gesetzt.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;AGENT_TOKEN_SCOPE&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;agent-token&lt;/code&gt; und die darauf aufbauenden Skripte, &lt;code&gt;agent-run&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;workflows&lt;/code&gt; oder &lt;code&gt;actions&lt;/code&gt;: fordert diesen &lt;a href="../../guides/scopes/"&gt;Scope&lt;/a&gt; an. Braucht einen Login der letzten 10 Minuten. Standard: kein Scope.&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;code&gt;XDG_CACHE_HOME&lt;/code&gt;&lt;/td&gt;
@@ -261,6 +271,18 @@ und als &lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt; und &lt;code&gt;LOGIN_APP_CLIE
 &lt;td&gt;Berechtigungen jedes Agent-Tokens als &lt;code&gt;name:level,...&lt;/code&gt;, Level &lt;code&gt;read&lt;/code&gt; oder &lt;code&gt;write&lt;/code&gt;.&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
+&lt;td&gt;&lt;code&gt;AGENT_SCOPES&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;config.scopes&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;leer: keine&lt;/td&gt;
+&lt;td&gt;Kommagetrennte optionale Scopes, die Clients anfordern dürfen: &lt;code&gt;workflows&lt;/code&gt;, &lt;code&gt;actions&lt;/code&gt;. Siehe &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;leer: keine&lt;/td&gt;
+&lt;td&gt;Kommagetrennte Glob-Muster für den Claim &lt;code&gt;job_workflow_ref&lt;/code&gt; von Workflows, die einen Scope anfordern dürfen.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
 &lt;td&gt;&lt;code&gt;LISTEN_ADDR&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;:8080&lt;/code&gt;&lt;/td&gt;
@@ -277,6 +299,11 @@ und als &lt;code&gt;TOKEN_BROKER_URL&lt;/code&gt; und &lt;code&gt;LOGIN_APP_CLIE
 &lt;p&gt;In Glob-Mustern steht &lt;code&gt;*&lt;/code&gt; für beliebige Zeichen einschließlich &lt;code&gt;/&lt;/code&gt;. &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; ersetzt die
 Standardmenge: Listen Sie alle Berechtigungen auf, und die Agent-App muss jede davon erhalten
 haben, sonst verweigert GitHub das Token. Ein ungültiger Eintrag stoppt den Broker beim Start.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;workflows&lt;/code&gt; fügt der Menge aus &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; &lt;code&gt;workflows: write&lt;/code&gt; hinzu, &lt;code&gt;actions&lt;/code&gt; fügt
+&lt;code&gt;actions: write&lt;/code&gt; hinzu. Die Agent-App muss jede Berechtigung erhalten haben, die ein Scope
+ergänzt. Der Broker startet nicht, wenn ein aktivierter Scope &lt;code&gt;workflows&lt;/code&gt; und &lt;code&gt;actions: write&lt;/code&gt;
+zusammen enthielte; verschieben Sie &lt;code&gt;actions: write&lt;/code&gt; aus &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; in den Scope
+&lt;code&gt;actions&lt;/code&gt;, bevor Sie &lt;code&gt;workflows&lt;/code&gt; aktivieren.&lt;/p&gt;
 &lt;p&gt;Der Broker braucht ausgehenden Zugriff nur auf &lt;code&gt;api.github.com&lt;/code&gt; und
 &lt;code&gt;token.actions.githubusercontent.com&lt;/code&gt;. Er protokolliert jedes ausgestellte und abgelehnte Token als
 strukturierte Logzeile mit Aufrufer und Repository.&lt;/p&gt;</description></item><item><title>Endpunkte</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/endpoints/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/endpoints/</guid><description>
@@ -328,7 +355,7 @@ strukturierte Logzeile mit Aufrufer und Repository.&lt;/p&gt;</description></ite
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;Authorization: Bearer &amp;lt;login token or Actions OIDC token&amp;gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;Content-Type: application/json
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;{&amp;#34;repo&amp;#34;: &amp;#34;my-org/my-repo&amp;#34;}&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="err"&gt;{&amp;#34;repo&amp;#34;: &amp;#34;my-org/my-repo&amp;#34;, &amp;#34;scope&amp;#34;: &amp;#34;default&amp;#34;}&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
 &lt;button
 class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
 title="Code kopieren"
@@ -340,6 +367,7 @@ data-copied-label="Kopiert!"
 &lt;/button&gt;
 &lt;/div&gt;
 &lt;/div&gt;
+&lt;p&gt;&lt;code&gt;scope&lt;/code&gt; ist optional: &lt;code&gt;default&lt;/code&gt;, &lt;code&gt;workflows&lt;/code&gt; oder &lt;code&gt;actions&lt;/code&gt;. Siehe &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Das Bearer-Token bestimmt den Weg: Ein Token mit zwei Punkten ist ein GitHub-Actions-OIDC-Token,
 alles andere ein User-Token der Login-App. Der Body ist auf 4096 Bytes begrenzt.&lt;/p&gt;
 &lt;p&gt;Antwort (200):&lt;/p&gt;
@@ -367,7 +395,7 @@ data-copied-label="Kopiert!"
 &lt;tbody&gt;
 &lt;tr&gt;
 &lt;td&gt;400&lt;/td&gt;
-&lt;td&gt;Ungültiges JSON, oder &lt;code&gt;repo&lt;/code&gt; ist nicht &lt;code&gt;owner/name&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Ungültiges JSON, &lt;code&gt;repo&lt;/code&gt; ist nicht &lt;code&gt;owner/name&lt;/code&gt;, oder &lt;code&gt;scope&lt;/code&gt; ist unbekannt oder nicht aktiviert&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;401&lt;/td&gt;
@@ -375,7 +403,7 @@ data-copied-label="Kopiert!"
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;403&lt;/td&gt;
-&lt;td&gt;Repository außerhalb von &lt;code&gt;GITHUB_ORG&lt;/code&gt;; App nicht auf dem Repository installiert; Actions-Token für ein anderes Repository oder einen anderen Subject; Ref oder Workflow nicht erlaubt; der Entwickler hat keinen Push-Zugriff&lt;/td&gt;
+&lt;td&gt;Repository außerhalb von &lt;code&gt;GITHUB_ORG&lt;/code&gt;; App nicht auf dem Repository installiert; Actions-Token für ein anderes Repository oder einen anderen Subject; Ref oder Workflow nicht erlaubt; der Entwickler hat keinen Push-Zugriff; ein erhöhter &lt;code&gt;scope&lt;/code&gt; ohne Login der letzten 10 Minuten (die Meldung verweist auf &lt;code&gt;agent-token --login&lt;/code&gt;) oder für einen Workflow außerhalb von &lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;500&lt;/td&gt;
@@ -391,6 +419,10 @@ data-copied-label="Kopiert!"
 &lt;code&gt;admin&lt;/code&gt;-Zugriff auf das Repository hat. Bei einem Actions-Token müssen der Claim &lt;code&gt;repository&lt;/code&gt; und
 der Claim &lt;code&gt;sub&lt;/code&gt; beide das angeforderte Repository nennen, und konfigurierte Positivlisten für Refs
 und Workflows müssen passen.&lt;/p&gt;
+&lt;p&gt;Ein erhöhter Scope verlangt mehr. Bei einem Login-Token darf der Login höchstens 10 Minuten alt
+sein. Der Broker leitet das aus &lt;code&gt;expires_at&lt;/code&gt; des Tokens minus 8 Stunden ab; ein Token ohne Ablauf
+wird abgelehnt. Bei einem Actions-Token muss &lt;code&gt;job_workflow_ref&lt;/code&gt; zu &lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;
+passen; leer lässt keinen zu.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="post-tokenactions"&gt;&lt;code&gt;POST /token/actions&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="post-tokenactions"&gt;&lt;/span&gt;
 &lt;a href="#post-tokenactions" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Gleiche Anfrage und Antwort wie &lt;code&gt;/token&lt;/code&gt;, aber ein Bearer-Token, das nicht wie ein JWT aufgebaut
 ist, bekommt 401 &lt;code&gt;only GitHub Actions OIDC tokens are accepted here&lt;/code&gt;. Leiten Sie auf einer
@@ -547,6 +579,11 @@ Timeout 3 Sekunden), sonst 503 &lt;code&gt;not ready&lt;/code&gt;.&lt;/p&gt;
 &lt;td&gt;&lt;code&gt;{}&lt;/code&gt;: die Standardmenge&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
+&lt;td&gt;&lt;code&gt;config.scopes&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;AGENT_SCOPES&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;[]&lt;/code&gt;: keine&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
 &lt;td&gt;&lt;code&gt;config.actionsOidc.audience&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;ACTIONS_OIDC_AUDIENCE&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;token-broker&lt;/code&gt;&lt;/td&gt;
@@ -566,11 +603,21 @@ Timeout 3 Sekunden), sonst 503 &lt;code&gt;not ready&lt;/code&gt;.&lt;/p&gt;
 &lt;td&gt;&lt;code&gt;ACTIONS_ALLOWED_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;[]&lt;/code&gt;&lt;/td&gt;
 &lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;[]&lt;/code&gt;: keine&lt;/td&gt;
+&lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;&lt;code&gt;config.agentPermissions&lt;/code&gt; ist eine Map, zum Beispiel
 &lt;code&gt;{contents: write, pull_requests: write, issues: write, metadata: read, actions: write}&lt;/code&gt;. Listen Sie
 die vollständige Menge auf; die Agent-App muss alle erhalten haben.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;config.scopes&lt;/code&gt; ist eine Liste aus &lt;code&gt;workflows&lt;/code&gt; und &lt;code&gt;actions&lt;/code&gt;; jeder Eintrag fügt dieser Menge eine
+Berechtigung hinzu, die die App erhalten haben muss. Der Broker startet nicht, wenn ein Scope
+&lt;code&gt;workflows&lt;/code&gt; und &lt;code&gt;actions: write&lt;/code&gt; zusammen enthielte. &lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt; listet
+die Muster für &lt;code&gt;job_workflow_ref&lt;/code&gt; von Workflows, die einen Scope anfordern dürfen; leer heißt
+keine. Siehe &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="secret"&gt;Secret&lt;span class="hx:absolute hx:-mt-20" id="secret"&gt;&lt;/span&gt;
 &lt;a href="#secret" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;table&gt;
 &lt;thead&gt;
@@ -690,7 +737,7 @@ Einheiten- und Typ-Suffixe. Im Chart rendert &lt;code&gt;metrics.serviceMonitor.
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;Beide tragen zwei Attribute:&lt;/p&gt;
+&lt;p&gt;Beide tragen drei Attribute:&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -706,6 +753,10 @@ Einheiten- und Typ-Suffixe. Im Chart rendert &lt;code&gt;metrics.serviceMonitor.
 &lt;tr&gt;
 &lt;td&gt;&lt;code&gt;via&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;&lt;code&gt;actions&lt;/code&gt; (Actions-OIDC-Token), &lt;code&gt;device&lt;/code&gt; (Login-Token), &lt;code&gt;unknown&lt;/code&gt; (abgewiesen, bevor der Aufrufer bekannt ist)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;scope&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;default&lt;/code&gt;, &lt;code&gt;workflows&lt;/code&gt;, &lt;code&gt;actions&lt;/code&gt;, &lt;code&gt;unknown&lt;/code&gt; (die Anfrage scheiterte, bevor der Scope geprüft war)&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;

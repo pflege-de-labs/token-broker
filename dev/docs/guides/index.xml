@@ -17,7 +17,7 @@ Developer settings → GitHub Apps&lt;/strong&gt;.&lt;/p&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;Repository permissions&lt;/td&gt;
-&lt;td&gt;Contents RW, Pull requests RW, Issues RW, Metadata R&lt;/td&gt;
+&lt;td&gt;Contents RW, Pull requests RW, Issues RW, Metadata R; Workflows RW or Actions RW only for &lt;a href="../scopes/"&gt;scopes&lt;/a&gt;&lt;/td&gt;
 &lt;td&gt;none&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
@@ -53,9 +53,10 @@ developer.&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;Repository permissions:&lt;/strong&gt; Contents, Pull requests and Issues &lt;strong&gt;Read and write&lt;/strong&gt;, Metadata
 &lt;strong&gt;Read-only&lt;/strong&gt;. Everything else &lt;strong&gt;No access&lt;/strong&gt;, in particular:
 &lt;ul&gt;
-&lt;li&gt;Workflows, so an agent cannot edit CI to escalate.&lt;/li&gt;
-&lt;li&gt;Administration, Secrets, Environments and Actions, so it cannot manage repositories or
-secrets.&lt;/li&gt;
+&lt;li&gt;Workflows and Actions, unless the deployment enables the &lt;code&gt;workflows&lt;/code&gt; or &lt;code&gt;actions&lt;/code&gt;
+&lt;a href="../scopes/"&gt;scope&lt;/a&gt;, and then only after the repository prerequisites listed there. Default
+tokens never get them.&lt;/li&gt;
+&lt;li&gt;Administration, Secrets and Environments, so it cannot manage repositories or secrets.&lt;/li&gt;
 &lt;li&gt;Checks and Statuses, so it cannot report a required check as green.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
@@ -68,9 +69,10 @@ never into a repository secret or onto a laptop. Delete the downloaded file afte
 &lt;/ul&gt;
 &lt;p&gt;Every repository the app is installed on must also set &lt;a href="../review-rules/"&gt;review rules&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;The broker requests only the four permissions per token, so granting more to the app widens
-nothing for agents. &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; (chart: &lt;code&gt;config.agentPermissions&lt;/code&gt;) changes that set; every
-installation must have accepted each permission in it, or GitHub refuses the token. Keep the app
-minimal: the private key alone can mint tokens with everything the app has.&lt;/p&gt;
+nothing for agents. &lt;code&gt;AGENT_PERMISSIONS&lt;/code&gt; (chart: &lt;code&gt;config.agentPermissions&lt;/code&gt;) changes that set.
+&lt;code&gt;AGENT_SCOPES&lt;/code&gt; (chart: &lt;code&gt;config.scopes&lt;/code&gt;) adds Workflows or Actions for tokens that ask for them.
+Every installation must have accepted each permission requested, or GitHub refuses the token. Keep
+the app minimal: the private key alone can mint tokens with everything the app has.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="login-app"&gt;Login app&lt;span class="hx:absolute hx:-mt-20" id="login-app"&gt;&lt;/span&gt;
 &lt;a href="#login-app" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
 &lt;li&gt;The owner is the organization; install only on this account.&lt;/li&gt;
@@ -234,7 +236,117 @@ data-copied-label="Copied!"
 &lt;/div&gt;
 &lt;p&gt;A request must match one pattern of each configured list. Empty lists apply no restriction. Pull
 request runs carry &lt;code&gt;ref: refs/pull/&amp;lt;n&amp;gt;/merge&lt;/code&gt;, so &lt;code&gt;allowedRefs&lt;/code&gt; without &lt;code&gt;refs/pull/*&lt;/code&gt; blocks
-agents on pull requests.&lt;/p&gt;</description></item><item><title>Sign agent commits</title><link>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/signed-commits/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/signed-commits/</guid><description>
+agents on pull requests.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="request-a-scope"&gt;Request a scope&lt;span class="hx:absolute hx:-mt-20" id="request-a-scope"&gt;&lt;/span&gt;
+&lt;a href="#request-a-scope" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;A workflow gets the &lt;code&gt;workflows&lt;/code&gt; or &lt;code&gt;actions&lt;/code&gt; &lt;a href="../scopes/"&gt;scope&lt;/a&gt; with &lt;code&gt;&amp;quot;scope&amp;quot;:&amp;quot;workflows&amp;quot;&lt;/code&gt; in the
+request body, only if the deployment enables it and the workflow&amp;rsquo;s &lt;code&gt;job_workflow_ref&lt;/code&gt; matches
+&lt;code&gt;config.actionsOidc.scopeWorkflows&lt;/code&gt;. That list is empty by default, so no workflow gets a scope.&lt;/p&gt;</description></item><item><title>Edit or run workflows with scopes</title><link>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/scopes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/scopes/</guid><description>
+&lt;p&gt;Agent tokens can commit, push, open pull requests and work on issues. Two opt-in scopes add one
+permission each, for one token at a time
+(&lt;a href="https://github.com/pflege-de-labs/token-broker/blob/main/docs/adr/0016-agent-token-scopes.md" target="_blank" rel="noopener"&gt;ADR 16&lt;/a&gt;):&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Scope&lt;/th&gt;
+&lt;th&gt;Adds&lt;/th&gt;
+&lt;th&gt;For&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;default&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;nothing&lt;/td&gt;
+&lt;td&gt;everything else&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;workflows&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;workflows: write&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;pushing changes under &lt;code&gt;.github/workflows/&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;actions&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;actions: write&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;workflow_dispatch&lt;/code&gt;, re-running jobs&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;No token holds both: the broker refuses to start if a scope would.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="enable"&gt;Enable&lt;span class="hx:absolute hx:-mt-20" id="enable"&gt;&lt;/span&gt;
+&lt;a href="#enable" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Grant the agent app the permission (&lt;strong&gt;Workflows: Read and write&lt;/strong&gt;, &lt;strong&gt;Actions: Read and write&lt;/strong&gt;)
+and accept it on every installation (&lt;a href="../github-apps/"&gt;Set up the GitHub Apps&lt;/a&gt;). GitHub refuses
+tokens for installations that have not accepted.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Set the chart values:&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-yaml" data-lang="yaml"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nt"&gt;config&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;scopes&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="l"&gt;workflows] &lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="c"&gt;# AGENT_SCOPES&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;actionsOidc&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="c"&gt;# Workflows that may request a scope (ACTIONS_SCOPE_WORKFLOWS); empty: none.&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nt"&gt;scopeWorkflows&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;#34;acme/app/.github/workflows/release.yml@refs/heads/main&amp;#34;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Copy code"
+aria-label="Copy code"
+data-copied-label="Copied!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;If &lt;code&gt;agentPermissions&lt;/code&gt; contains &lt;code&gt;actions: write&lt;/code&gt;, remove it and enable the &lt;code&gt;actions&lt;/code&gt; scope
+instead. Otherwise the &lt;code&gt;workflows&lt;/code&gt; scope would hold both and the broker does not start.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 data-hextra-search-id="use"&gt;Use&lt;span class="hx:absolute hx:-mt-20" id="use"&gt;&lt;/span&gt;
+&lt;a href="#use" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Developers: log in anew, then request the scope within 10 minutes. The broker checks that the
+login is that recent, so an agent cannot elevate itself with a cached login.&lt;/p&gt;
+&lt;div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code"&gt;
+&lt;div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-sh" data-lang="sh"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;agent-token --login &lt;span class="c1"&gt;# in Claude Code: ! agent-token --login&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nv"&gt;AGENT_TOKEN_SCOPE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;workflows agent-commit -m &lt;span class="s2"&gt;&amp;#34;ci: …&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nv"&gt;AGENT_TOKEN_SCOPE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;actions agent-gh run rerun &lt;span class="m"&gt;1234&lt;/span&gt; --failed &lt;span class="c1"&gt;# `gh` in the devcontainer&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0"&gt;
+&lt;button
+class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+title="Copy code"
+aria-label="Copy code"
+data-copied-label="Copied!"
+&gt;
+&lt;div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"&gt;&lt;/div&gt;
+&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;The elevated token is cached per scope for its hour. Calls without &lt;code&gt;AGENT_TOKEN_SCOPE&lt;/code&gt; keep using
+the default token. &lt;code&gt;AGENT_TOKEN_SCOPE=workflows agent-run&lt;/code&gt; runs a whole session with the scope;
+it ends after one hour, because renewing needs another fresh login.&lt;/p&gt;
+&lt;p&gt;Workflows: add &lt;code&gt;&amp;quot;scope&amp;quot;:&amp;quot;workflows&amp;quot;&lt;/code&gt; to the request body. Only workflows matching
+&lt;code&gt;scopeWorkflows&lt;/code&gt; get it. See &lt;a href="../actions/"&gt;Get agent tokens in GitHub Actions&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="before-enabling-workflows-on-a-repository"&gt;Before enabling &lt;code&gt;workflows&lt;/code&gt; on a repository&lt;span class="hx:absolute hx:-mt-20" id="before-enabling-workflows-on-a-repository"&gt;&lt;/span&gt;
+&lt;a href="#before-enabling-workflows-on-a-repository" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;A pushed workflow runs on its &lt;code&gt;push&lt;/code&gt; or &lt;code&gt;pull_request&lt;/code&gt; trigger. It does not need &lt;code&gt;actions: write&lt;/code&gt;.
+So an agent with &lt;code&gt;workflows&lt;/code&gt; can run code it wrote, with whatever that branch can reach. Make
+agent branches unprivileged first:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Secrets only in &lt;strong&gt;environments&lt;/strong&gt; whose deployment branch policy allows protected branches only,
+with required reviewers for production. No repository or organization secrets.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ACTIONS_ALLOWED_REFS&lt;/code&gt; limited to protected branches, so a workflow on an agent branch cannot get
+an agent token itself.&lt;/li&gt;
+&lt;li&gt;Cloud OIDC trust policies pinned to a &lt;code&gt;ref&lt;/code&gt; or &lt;code&gt;environment&lt;/code&gt;, not only the repository.&lt;/li&gt;
+&lt;li&gt;Organization default &lt;code&gt;GITHUB_TOKEN&lt;/code&gt; permissions read-only; &lt;strong&gt;Allow GitHub Actions to create and
+approve pull requests&lt;/strong&gt; off.&lt;/li&gt;
+&lt;li&gt;Self-hosted runner groups limited to selected workflows on protected branches.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.github/workflows/&lt;/code&gt; owned by a human team in &lt;code&gt;CODEOWNERS&lt;/code&gt;. Code owner review is already
+required (&lt;a href="../review-rules/"&gt;Set review rules&lt;/a&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 data-hextra-search-id="triggering-without-actions"&gt;Triggering without &lt;code&gt;actions&lt;/code&gt;&lt;span class="hx:absolute hx:-mt-20" id="triggering-without-actions"&gt;&lt;/span&gt;
+&lt;a href="#triggering-without-actions" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;code&gt;repository_dispatch&lt;/code&gt; needs only &lt;code&gt;contents: write&lt;/code&gt;, which every agent token has, and runs the
+default-branch version of a workflow. Repositories that want agents to start reviewed workflows
+can add &lt;code&gt;on: repository_dispatch&lt;/code&gt; instead of enabling &lt;code&gt;actions&lt;/code&gt;. Such a workflow must not check
+out a ref from &lt;code&gt;client_payload&lt;/code&gt; while secrets are available.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;actions: write&lt;/code&gt; also lets the agent cancel and delete runs and logs, disable workflows and delete
+caches.&lt;/p&gt;</description></item><item><title>Sign agent commits</title><link>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/signed-commits/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/signed-commits/</guid><description>
 &lt;p&gt;&lt;code&gt;git commit&lt;/code&gt; in a container makes unsigned commits: GitHub signs app commits only when it creates
 them itself. Rulesets with &lt;code&gt;required_signatures&lt;/code&gt; then block them on protected branches. Squash
 merges still work, because GitHub signs the squash commit.&lt;/p&gt;

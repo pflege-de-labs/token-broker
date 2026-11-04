@@ -77,6 +77,18 @@ konfigurierten Berechtigungen. Abgesehen von Metadata sind das standardmäßig C
 requests und Issues. Es hat keine Berechtigungen für Workflows, Administration, Secrets oder
 Statuses, kann also weder die CI ändern noch das Repository verwalten noch einen erforderlichen
 Check als grün melden.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="scopes-keep-editing-and-running-apart"&gt;Scopes trennen Bearbeiten und Ausführen&lt;span class="hx:absolute hx:-mt-20" id="scopes-keep-editing-and-running-apart"&gt;&lt;/span&gt;
+&lt;a href="#scopes-keep-editing-and-running-apart" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Zwei optionale &lt;a href="../../guides/scopes/"&gt;Scopes&lt;/a&gt; fügen je eine Berechtigung hinzu, jeweils für ein
+einzelnes Token: &lt;code&gt;workflows&lt;/code&gt; lässt einen Agent die CI ändern, &lt;code&gt;actions&lt;/code&gt; lässt ihn Workflows
+ausführen. Kein Token hat beides, und der Broker startet nicht, wenn ein Scope beides enthielte.
+Ein Entwickler erhält einen erhöhten Scope nur innerhalb von 10 Minuten nach einem frischen
+Device-Flow-Login, sodass ein Agent sich mit einem zwischengespeicherten Login nicht selbst
+höherstufen kann. Ein Workflow erhält ihn nur, wenn sein &lt;code&gt;job_workflow_ref&lt;/code&gt; in
+&lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt; steht.&lt;/p&gt;
+&lt;p&gt;Getrennte Tokens trennen Bearbeiten und Ausführen nicht: Ein gepushter Workflow läuft über seinen
+&lt;code&gt;push&lt;/code&gt;- oder &lt;code&gt;pull_request&lt;/code&gt;-Trigger ohne &lt;code&gt;actions: write&lt;/code&gt;. Ein Repository schützt, dass Code aus
+Agent-Branches ohne Privilegien läuft, bis ein Mensch ihn mergt. Der Broker erzwingt die
+&lt;a href="../../guides/scopes/#before-enabling-workflows-on-a-repository"&gt;Voraussetzungen&lt;/a&gt; nicht.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="humans-stay-in-the-loop"&gt;Menschen bleiben beteiligt&lt;span class="hx:absolute hx:-mt-20" id="humans-stay-in-the-loop"&gt;&lt;/span&gt;
 &lt;a href="#humans-stay-in-the-loop" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Die Agent-App kann Pull Requests freigeben, und mit Schreibrechten auf Inhalte würden ihre
 Freigaben auf erforderliche Reviews angerechnet. Jedes Repository, auf dem sie installiert ist,

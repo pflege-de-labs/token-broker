@@ -73,6 +73,17 @@ act as the developer.&lt;/li&gt;
 permissions. Metadata aside, the default is contents, pull requests and issues. It has no
 workflow, administration, secrets or status permissions, so it cannot edit CI, manage the
 repository or report a required check as green.&lt;/p&gt;
+&lt;h2 data-hextra-search-id="scopes-keep-editing-and-running-apart"&gt;Scopes keep editing and running apart&lt;span class="hx:absolute hx:-mt-20" id="scopes-keep-editing-and-running-apart"&gt;&lt;/span&gt;
+&lt;a href="#scopes-keep-editing-and-running-apart" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Two opt-in &lt;a href="../../guides/scopes/"&gt;scopes&lt;/a&gt; add one permission each, for one token at a time:
+&lt;code&gt;workflows&lt;/code&gt; lets an agent edit CI, &lt;code&gt;actions&lt;/code&gt; lets it run workflows. No token holds both, and the
+broker refuses to start if a scope would. A developer gets an elevated scope only within 10
+minutes of a fresh device-flow login, so an agent cannot elevate itself with a cached login. A
+workflow gets one only if its &lt;code&gt;job_workflow_ref&lt;/code&gt; is listed in &lt;code&gt;ACTIONS_SCOPE_WORKFLOWS&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Separate tokens do not separate editing from running: a pushed workflow runs on its &lt;code&gt;push&lt;/code&gt; or
+&lt;code&gt;pull_request&lt;/code&gt; trigger without &lt;code&gt;actions: write&lt;/code&gt;. What protects a repository is that code from
+agent branches runs without privileges until a human merges it. The
+&lt;a href="../../guides/scopes/#before-enabling-workflows-on-a-repository"&gt;prerequisites&lt;/a&gt; are not enforced
+by the broker.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="humans-stay-in-the-loop"&gt;Humans stay in the loop&lt;span class="hx:absolute hx:-mt-20" id="humans-stay-in-the-loop"&gt;&lt;/span&gt;
 &lt;a href="#humans-stay-in-the-loop" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;The agent app can approve pull requests, and with contents write its approvals would count toward
 required reviews. Every repository it is installed on must therefore require a code owner review

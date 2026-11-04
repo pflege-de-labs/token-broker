@@ -381,7 +381,9 @@ Signaturen verlangen, die Commits akzeptieren.&lt;/li&gt;
 SSH-Agent wird weiterhin weitergeleitet: Die Firewall blockiert Port 22, aber er kann noch
 signieren. Für volle Isolation nutzen Sie &lt;a href="../container/"&gt;&lt;code&gt;agent-run&lt;/code&gt;&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;Ein git Worktree funktioniert nicht als Workspace, weil sein &lt;code&gt;.git&lt;/code&gt; außerhalb des Mounts zeigt.
-Öffnen Sie einen Klon.&lt;/li&gt;
+Öffnen Sie einen Klon und legen Sie Worktrees darin an, mit
+&lt;code&gt;git worktree add --relative-paths .worktrees/&amp;lt;name&amp;gt; -b &amp;lt;branch&amp;gt;&lt;/code&gt; (git 2.48+, &lt;code&gt;/.worktrees/&lt;/code&gt; in
+&lt;code&gt;.git/info/exclude&lt;/code&gt;); ihre Pfade funktionieren dann im Container und auf dem Host.&lt;/li&gt;
 &lt;li&gt;Netzwerkzugriff über die Positivliste hinaus braucht eine Änderung an &lt;code&gt;allowed-domains&lt;/code&gt; und einen
 Rebuild.&lt;/li&gt;
 &lt;/ul&gt;

@@ -368,7 +368,9 @@ signatures accept them.&lt;/li&gt;
 agent is still forwarded: the firewall blocks port 22, but it can still sign. For full
 isolation use &lt;a href="../container/"&gt;&lt;code&gt;agent-run&lt;/code&gt;&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;A git worktree does not work as the workspace, because its &lt;code&gt;.git&lt;/code&gt; points outside the mount.
-Open a clone.&lt;/li&gt;
+Open a clone, and create worktrees inside it with
+&lt;code&gt;git worktree add --relative-paths .worktrees/&amp;lt;name&amp;gt; -b &amp;lt;branch&amp;gt;&lt;/code&gt; (git 2.48+, &lt;code&gt;/.worktrees/&lt;/code&gt; in
+&lt;code&gt;.git/info/exclude&lt;/code&gt;); their paths resolve in the container and on the host.&lt;/li&gt;
 &lt;li&gt;Network access beyond the allowlist needs a change to &lt;code&gt;allowed-domains&lt;/code&gt; and a rebuild.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;For an image without the Feature, see
