@@ -6,14 +6,21 @@ set -euo pipefail
 PATH="$(dirname "${BASH_SOURCE[0]}")/../bin:$PATH"
 docs=https://pflege-de-labs.github.io/token-broker/docs/getting-started/claude-code/
 input=$(cat)
+re='"session_id"[[:space:]]*:[[:space:]]*"([A-Za-z0-9-]+)"'
+[[ $input =~ $re ]] && sid=${BASH_REMATCH[1]} || sid=
+marks="${TMPDIR:-/tmp}/claude-agent-token"
+# guard.sh reruns this script later and only SessionStart gets CLAUDE_ENV_FILE, so remember it.
+if [[ -n $sid && -n ${CLAUDE_ENV_FILE:-} ]]; then
+  mkdir -p "$marks"
+  echo "$CLAUDE_ENV_FILE" >"$marks/$sid.env"
+fi
 repo=$(gh repo view --json nameWithOwner,repositoryTopics \
   --jq 'select(any(.repositoryTopics[]?; .name == "agent-token-broker")) | .nameWithOwner' 2>/dev/null) || exit 0
 [[ -n $repo ]] || exit 0
 # guard.sh blocks git commit/push and gh for marked sessions. Parsed without jq, so a missing jq still marks.
-re='"session_id"[[:space:]]*:[[:space:]]*"([A-Za-z0-9-]+)"'
-if [[ $input =~ $re ]]; then
-  mkdir -p "${TMPDIR:-/tmp}/claude-agent-token"
-  echo "$repo" >"${TMPDIR:-/tmp}/claude-agent-token/${BASH_REMATCH[1]}"
+if [[ -n $sid ]]; then
+  mkdir -p "$marks"
+  echo "$repo" >"$marks/$sid"
 fi
 
 stop() {
