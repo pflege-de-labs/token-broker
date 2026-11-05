@@ -20,6 +20,12 @@ agent-commit -m "feat: something" -m "Body."   # or -F <file>
 * Es verweigert, wenn der lokale Branch Commits hat, die origin fehlen, sowie bei neuen
   ausführbaren Dateien oder Moduswechseln: Die API kennt keinen Dateimodus, neue Dateien landen
   als `100644`. Committen Sie diese mit `git commit` und mergen Sie mit Squash.
+* Es teilt große Änderungen auf. Übersteigen die Dateiinhalte `AGENT_COMMIT_MAX_BYTES` (Standard
+  3 MB; GitHub hat einen Commit mit ~17 MB mit HTTP 499 beantwortet), sendet es mehrere Commits
+  mit höchstens dieser Größe. Alle außer dem letzten erhalten `(part i/n)` am Ende der Betreffzeile,
+  und erst der letzte enthält die ganze Änderung. Schlägt ein Teil fehl, bleiben die vorherigen auf
+  origin und der lokale Branch steht auf ihnen: Führen Sie dasselbe `agent-commit` erneut aus, um
+  den Rest zu senden.
 * Es erzeugt keine Merge-Commits; führen Sie stattdessen einen Rebase auf den Basis-Branch durch.
 * `AGENT_COMMIT_MODE=local` macht daraus ein einfaches `git commit`, für Repositories, die keine
   API-Commits wollen.
