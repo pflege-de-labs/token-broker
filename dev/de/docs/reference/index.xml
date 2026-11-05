@@ -120,7 +120,9 @@ data-copied-label="Kopiert!"
 &lt;p&gt;Committet die gestageten Änderungen über GraphQL &lt;code&gt;createCommitOnBranch&lt;/code&gt;, sodass GitHub den Commit
 signiert, pusht ihn und setzt den lokalen Branch darauf. Details und Grenzen:
 &lt;a href="../../guides/signed-commits/"&gt;Agent-Commits signieren&lt;/a&gt;. &lt;code&gt;AGENT_COMMIT_MODE=local&lt;/code&gt; führt stattdessen
-ein einfaches &lt;code&gt;git commit&lt;/code&gt; mit den Argumenten aus.&lt;/p&gt;</description></item><item><title>Client-Umgebung</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/client-env/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/client-env/</guid><description>
+ein einfaches &lt;code&gt;git commit&lt;/code&gt; mit den Argumenten aus. Änderungen, deren Dateiinhalte
+&lt;code&gt;AGENT_COMMIT_MAX_BYTES&lt;/code&gt; (Bytes, Standard &lt;code&gt;3000000&lt;/code&gt;) übersteigen, werden als mehrere Commits mit
+&lt;code&gt;(part i/n)&lt;/code&gt; in der Betreffzeile übertragen.&lt;/p&gt;</description></item><item><title>Client-Umgebung</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/client-env/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/reference/client-env/</guid><description>
 &lt;p&gt;Variablen, die die Client-Skripte und &lt;code&gt;agent-run&lt;/code&gt; lesen.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;

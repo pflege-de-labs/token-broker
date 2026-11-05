@@ -372,6 +372,11 @@ at &lt;code&gt;HEAD&lt;/code&gt;, which must already be on GitHub.&lt;/li&gt;
 &lt;li&gt;It refuses if the local branch has commits that origin lacks, and for new executables or mode
 changes: the API has no file mode, so new files land as &lt;code&gt;100644&lt;/code&gt;. Commit those with
 &lt;code&gt;git commit&lt;/code&gt; and merge with squash.&lt;/li&gt;
+&lt;li&gt;It splits large changes. When the file contents exceed &lt;code&gt;AGENT_COMMIT_MAX_BYTES&lt;/code&gt; (default 3 MB;
+GitHub answered a ~17 MB commit with HTTP 499), it sends several commits of at most that size.
+All but the last get &lt;code&gt;(part i/n)&lt;/code&gt; appended to the subject, and only the last holds the whole
+change. If a part fails, the earlier ones stay on origin and the local branch is on them: run
+the same &lt;code&gt;agent-commit&lt;/code&gt; again to send the rest.&lt;/li&gt;
 &lt;li&gt;It creates no merge commits; rebase onto the base branch instead.&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;AGENT_COMMIT_MODE=local&lt;/code&gt; turns it into plain &lt;code&gt;git commit&lt;/code&gt;, for repositories that do not want
 API commits.&lt;/li&gt;

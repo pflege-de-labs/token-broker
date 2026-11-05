@@ -279,6 +279,12 @@ fehlt, wird bei &lt;code&gt;HEAD&lt;/code&gt; angelegt, und &lt;code&gt;HEAD&lt;
 &lt;li&gt;Es verweigert, wenn der lokale Branch Commits hat, die origin fehlen, sowie bei neuen
 ausführbaren Dateien oder Moduswechseln: Die API kennt keinen Dateimodus, neue Dateien landen
 als &lt;code&gt;100644&lt;/code&gt;. Committen Sie diese mit &lt;code&gt;git commit&lt;/code&gt; und mergen Sie mit Squash.&lt;/li&gt;
+&lt;li&gt;Es teilt große Änderungen auf. Übersteigen die Dateiinhalte &lt;code&gt;AGENT_COMMIT_MAX_BYTES&lt;/code&gt; (Standard
+3 MB; GitHub hat einen Commit mit ~17 MB mit HTTP 499 beantwortet), sendet es mehrere Commits
+mit höchstens dieser Größe. Alle außer dem letzten erhalten &lt;code&gt;(part i/n)&lt;/code&gt; am Ende der Betreffzeile,
+und erst der letzte enthält die ganze Änderung. Schlägt ein Teil fehl, bleiben die vorherigen auf
+origin und der lokale Branch steht auf ihnen: Führen Sie dasselbe &lt;code&gt;agent-commit&lt;/code&gt; erneut aus, um
+den Rest zu senden.&lt;/li&gt;
 &lt;li&gt;Es erzeugt keine Merge-Commits; führen Sie stattdessen einen Rebase auf den Basis-Branch durch.&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;AGENT_COMMIT_MODE=local&lt;/code&gt; macht daraus ein einfaches &lt;code&gt;git commit&lt;/code&gt;, für Repositories, die keine
 API-Commits wollen.&lt;/li&gt;

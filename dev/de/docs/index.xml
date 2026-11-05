@@ -263,7 +263,9 @@ data-copied-label="Kopiert!"
 &lt;p&gt;Committet die gestageten Änderungen über GraphQL &lt;code&gt;createCommitOnBranch&lt;/code&gt;, sodass GitHub den Commit
 signiert, pusht ihn und setzt den lokalen Branch darauf. Details und Grenzen:
 &lt;a href="../../guides/signed-commits/"&gt;Agent-Commits signieren&lt;/a&gt;. &lt;code&gt;AGENT_COMMIT_MODE=local&lt;/code&gt; führt stattdessen
-ein einfaches &lt;code&gt;git commit&lt;/code&gt; mit den Argumenten aus.&lt;/p&gt;</description></item><item><title>GitHub-Apps einrichten</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/guides/github-apps/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/guides/github-apps/</guid><description>
+ein einfaches &lt;code&gt;git commit&lt;/code&gt; mit den Argumenten aus. Änderungen, deren Dateiinhalte
+&lt;code&gt;AGENT_COMMIT_MAX_BYTES&lt;/code&gt; (Bytes, Standard &lt;code&gt;3000000&lt;/code&gt;) übersteigen, werden als mehrere Commits mit
+&lt;code&gt;(part i/n)&lt;/code&gt; in der Betreffzeile übertragen.&lt;/p&gt;</description></item><item><title>GitHub-Apps einrichten</title><link>https://pflege-de-labs.github.io/token-broker/dev/de/docs/guides/github-apps/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/de/docs/guides/github-apps/</guid><description>
 &lt;p&gt;Der Broker braucht zwei GitHub-Apps im Besitz der Organisation. Die Einstellungen finden Sie unter
 &lt;strong&gt;Organization settings → Developer settings → GitHub Apps&lt;/strong&gt;.&lt;/p&gt;
 &lt;table&gt;
@@ -748,6 +750,12 @@ fehlt, wird bei &lt;code&gt;HEAD&lt;/code&gt; angelegt, und &lt;code&gt;HEAD&lt;
 &lt;li&gt;Es verweigert, wenn der lokale Branch Commits hat, die origin fehlen, sowie bei neuen
 ausführbaren Dateien oder Moduswechseln: Die API kennt keinen Dateimodus, neue Dateien landen
 als &lt;code&gt;100644&lt;/code&gt;. Committen Sie diese mit &lt;code&gt;git commit&lt;/code&gt; und mergen Sie mit Squash.&lt;/li&gt;
+&lt;li&gt;Es teilt große Änderungen auf. Übersteigen die Dateiinhalte &lt;code&gt;AGENT_COMMIT_MAX_BYTES&lt;/code&gt; (Standard
+3 MB; GitHub hat einen Commit mit ~17 MB mit HTTP 499 beantwortet), sendet es mehrere Commits
+mit höchstens dieser Größe. Alle außer dem letzten erhalten &lt;code&gt;(part i/n)&lt;/code&gt; am Ende der Betreffzeile,
+und erst der letzte enthält die ganze Änderung. Schlägt ein Teil fehl, bleiben die vorherigen auf
+origin und der lokale Branch steht auf ihnen: Führen Sie dasselbe &lt;code&gt;agent-commit&lt;/code&gt; erneut aus, um
+den Rest zu senden.&lt;/li&gt;
 &lt;li&gt;Es erzeugt keine Merge-Commits; führen Sie stattdessen einen Rebase auf den Basis-Branch durch.&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;AGENT_COMMIT_MODE=local&lt;/code&gt; macht daraus ein einfaches &lt;code&gt;git commit&lt;/code&gt;, für Repositories, die keine
 API-Commits wollen.&lt;/li&gt;

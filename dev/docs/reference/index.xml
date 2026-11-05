@@ -117,7 +117,9 @@ data-copied-label="Copied!"
 &lt;p&gt;Commits the staged changes through GraphQL &lt;code&gt;createCommitOnBranch&lt;/code&gt;, so GitHub signs the commit,
 pushes it and moves the local branch onto it. Details and limits:
 &lt;a href="../../guides/signed-commits/"&gt;Sign agent commits&lt;/a&gt;. &lt;code&gt;AGENT_COMMIT_MODE=local&lt;/code&gt; runs plain
-&lt;code&gt;git commit&lt;/code&gt; with the arguments instead.&lt;/p&gt;</description></item><item><title>Client environment</title><link>https://pflege-de-labs.github.io/token-broker/dev/docs/reference/client-env/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/docs/reference/client-env/</guid><description>
+&lt;code&gt;git commit&lt;/code&gt; with the arguments instead. Changes whose file contents exceed
+&lt;code&gt;AGENT_COMMIT_MAX_BYTES&lt;/code&gt; (bytes, default &lt;code&gt;3000000&lt;/code&gt;) are sent as several commits with &lt;code&gt;(part i/n)&lt;/code&gt;
+subjects.&lt;/p&gt;</description></item><item><title>Client environment</title><link>https://pflege-de-labs.github.io/token-broker/dev/docs/reference/client-env/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/docs/reference/client-env/</guid><description>
 &lt;p&gt;Variables the client scripts and &lt;code&gt;agent-run&lt;/code&gt; read.&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;

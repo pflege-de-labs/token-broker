@@ -255,7 +255,9 @@ data-copied-label="Copied!"
 &lt;p&gt;Commits the staged changes through GraphQL &lt;code&gt;createCommitOnBranch&lt;/code&gt;, so GitHub signs the commit,
 pushes it and moves the local branch onto it. Details and limits:
 &lt;a href="../../guides/signed-commits/"&gt;Sign agent commits&lt;/a&gt;. &lt;code&gt;AGENT_COMMIT_MODE=local&lt;/code&gt; runs plain
-&lt;code&gt;git commit&lt;/code&gt; with the arguments instead.&lt;/p&gt;</description></item><item><title>Set up the GitHub Apps</title><link>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/github-apps/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/github-apps/</guid><description>
+&lt;code&gt;git commit&lt;/code&gt; with the arguments instead. Changes whose file contents exceed
+&lt;code&gt;AGENT_COMMIT_MAX_BYTES&lt;/code&gt; (bytes, default &lt;code&gt;3000000&lt;/code&gt;) are sent as several commits with &lt;code&gt;(part i/n)&lt;/code&gt;
+subjects.&lt;/p&gt;</description></item><item><title>Set up the GitHub Apps</title><link>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/github-apps/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://pflege-de-labs.github.io/token-broker/dev/docs/guides/github-apps/</guid><description>
 &lt;p&gt;The broker needs two organization-owned GitHub Apps. Settings live under &lt;strong&gt;Organization settings →
 Developer settings → GitHub Apps&lt;/strong&gt;.&lt;/p&gt;
 &lt;table&gt;
@@ -985,6 +987,11 @@ at &lt;code&gt;HEAD&lt;/code&gt;, which must already be on GitHub.&lt;/li&gt;
 &lt;li&gt;It refuses if the local branch has commits that origin lacks, and for new executables or mode
 changes: the API has no file mode, so new files land as &lt;code&gt;100644&lt;/code&gt;. Commit those with
 &lt;code&gt;git commit&lt;/code&gt; and merge with squash.&lt;/li&gt;
+&lt;li&gt;It splits large changes. When the file contents exceed &lt;code&gt;AGENT_COMMIT_MAX_BYTES&lt;/code&gt; (default 3 MB;
+GitHub answered a ~17 MB commit with HTTP 499), it sends several commits of at most that size.
+All but the last get &lt;code&gt;(part i/n)&lt;/code&gt; appended to the subject, and only the last holds the whole
+change. If a part fails, the earlier ones stay on origin and the local branch is on them: run
+the same &lt;code&gt;agent-commit&lt;/code&gt; again to send the rest.&lt;/li&gt;
 &lt;li&gt;It creates no merge commits; rebase onto the base branch instead.&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;AGENT_COMMIT_MODE=local&lt;/code&gt; turns it into plain &lt;code&gt;git commit&lt;/code&gt;, for repositories that do not want
 API commits.&lt;/li&gt;
