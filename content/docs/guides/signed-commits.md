@@ -20,6 +20,11 @@ agent-commit -m "feat: something" -m "Body."   # or -F <file>
 * It refuses if the local branch has commits that origin lacks, and for new executables or mode
   changes: the API has no file mode, so new files land as `100644`. Commit those with
   `git commit` and merge with squash.
+* It splits large changes. When the file contents exceed `AGENT_COMMIT_MAX_BYTES` (default 3 MB;
+  GitHub answered a ~17 MB commit with HTTP 499), it sends several commits of at most that size.
+  All but the last get `(part i/n)` appended to the subject, and only the last holds the whole
+  change. If a part fails, the earlier ones stay on origin and the local branch is on them: run
+  the same `agent-commit` again to send the rest.
 * It creates no merge commits; rebase onto the base branch instead.
 * `AGENT_COMMIT_MODE=local` turns it into plain `git commit`, for repositories that do not want
   API commits.

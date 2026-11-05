@@ -86,4 +86,6 @@ agent-commit -F <file>
 Committet die gestageten Änderungen über GraphQL `createCommitOnBranch`, sodass GitHub den Commit
 signiert, pusht ihn und setzt den lokalen Branch darauf. Details und Grenzen:
 [Agent-Commits signieren](../../guides/signed-commits/). `AGENT_COMMIT_MODE=local` führt stattdessen
-ein einfaches `git commit` mit den Argumenten aus.
+ein einfaches `git commit` mit den Argumenten aus. Änderungen, deren Dateiinhalte
+`AGENT_COMMIT_MAX_BYTES` (Bytes, Standard `3000000`) übersteigen, werden als mehrere Commits mit
+`(part i/n)` in der Betreffzeile übertragen.
