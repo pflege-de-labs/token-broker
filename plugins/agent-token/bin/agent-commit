@@ -2,6 +2,7 @@
 # Usage: agent-commit -m <message> [-m <paragraph>]... | -F <file>
 # Commits the staged changes through GitHub's createCommitOnBranch, so GitHub signs the commit,
 # then moves the local branch onto it. AGENT_COMMIT_MODE=local runs plain `git commit` instead.
+# Changes over AGENT_COMMIT_MAX_BYTES (file contents, default 3 MB) go up as several commits.
 set -euo pipefail
 if [[ ${AGENT_COMMIT_MODE:-api} == local ]]; then exec git commit "$@"; fi
 
@@ -44,15 +45,19 @@ elif [[ $remote != "$head" ]]; then
   exit 1
 fi
 
+# shortcut: 3 MB is an estimate (a ~17 MB commit failed with HTTP 499, 3 MB parts went through).
+max=${AGENT_COMMIT_MAX_BYTES:-3000000}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-: >"$tmp/additions"
-: >"$tmp/deletions"
+parts=1 size=0
+: >"$tmp/adds.1"
+: >"$tmp/dels.1"
+# Check and encode everything before sending, so a refused file never leaves half a change on origin.
 # Raw format: ":<old mode> <new mode> <old sha> <new sha> <status>\0<path>\0".
 while IFS= read -r -d '' meta && IFS= read -r -d '' path; do
   read -r old_mode new_mode _ sha status <<<"${meta#:}"
   if [[ $status == D ]]; then
-    jq -n --arg p "$path" '{path: $p}' >>"$tmp/deletions"
+    jq -n --arg p "$path" '{path: $p}' >>"$tmp/dels.1"
     continue
   fi
   # The API has no file mode: new files land as 100644, existing ones keep theirs.
@@ -60,30 +65,45 @@ while IFS= read -r -d '' meta && IFS= read -r -d '' path; do
     echo "agent-commit: $path changes mode ($old_mode -> $new_mode), which the API cannot commit; use git commit" >&2
     exit 1
   fi
+  bytes=$(git cat-file -s "$sha")
+  if ((size > 0 && size + bytes > max)); then
+    parts=$((parts + 1)) size=0
+    : >"$tmp/adds.$parts"
+    : >"$tmp/dels.$parts"
+  fi
+  size=$((size + bytes))
   git cat-file blob "$sha" | base64 | tr -d '\n' >"$tmp/blob"
-  jq -n --arg p "$path" --rawfile c "$tmp/blob" '{path: $p, contents: $c}' >>"$tmp/additions"
+  jq -n --arg p "$path" --rawfile c "$tmp/blob" '{path: $p, contents: $c}' >>"$tmp/adds.$parts"
 done < <(git diff-tree -r --raw -z --no-renames --no-abbrev HEAD "$tree")
 
-jq -n --arg repo "$repo" --arg branch "$branch" --arg head "$head" --arg msg "$msg" \
-  --slurpfile adds "$tmp/additions" --slurpfile dels "$tmp/deletions" '{
-  query: "mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }",
-  variables: {input: {
-    branch: {repositoryNameWithOwner: $repo, branchName: $branch},
-    expectedHeadOid: $head,
-    message: {headline: ($msg | split("\n")[0]), body: ($msg | split("\n")[1:] | join("\n") | ltrimstr("\n"))},
-    fileChanges: {additions: $adds, deletions: $dels}}}}' >"$tmp/request"
-resp=$(api graphql <"$tmp/request")
-oid=$(jq -r '.data.createCommitOnBranch.commit.oid // empty' <<<"$resp")
-[[ -n $oid ]] || { echo "agent-commit: GitHub refused: $(jq -c '.errors // .' <<<"$resp")" >&2; exit 1; }
-
-git fetch -q origin "+refs/heads/$branch:refs/remotes/origin/$branch"
-# Move the branch only if GitHub's commit holds exactly what was staged.
-if [[ $(git rev-parse "$oid^{tree}") != "$tree" ]]; then
-  echo "agent-commit: pushed $oid, but its tree differs from the staged one; local branch left as is" >&2
-  exit 1
-fi
-git reset -q --soft "$oid"
 # Via config: --set-upstream-to rejects refs outside remote.origin.fetch (single-branch clones).
 git config "branch.$branch.remote" origin
 git config "branch.$branch.merge" "refs/heads/$branch"
-echo "[$branch ${oid:0:7}] $(git log -1 --format=%s "$oid")"
+for ((part = 1; part <= parts; part++)); do
+  suffix=
+  ((part < parts)) && suffix=" (part $part/$parts)"
+  jq -n --arg repo "$repo" --arg branch "$branch" --arg head "$head" --arg msg "$msg" --arg suffix "$suffix" \
+    --slurpfile adds "$tmp/adds.$part" --slurpfile dels "$tmp/dels.$part" '{
+    query: "mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }",
+    variables: {input: {
+      branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+      expectedHeadOid: $head,
+      message: {headline: (($msg | split("\n")[0]) + $suffix), body: ($msg | split("\n")[1:] | join("\n") | ltrimstr("\n"))},
+      fileChanges: {additions: $adds, deletions: $dels}}}}' >"$tmp/request"
+  # Earlier parts are on origin and the local branch is on them: a rerun sends only the rest.
+  resp=$(api graphql <"$tmp/request") ||
+    { echo "agent-commit: request for part $part/$parts failed; rerun to send the rest, with a lower AGENT_COMMIT_MAX_BYTES if it was too large" >&2; exit 1; }
+  oid=$(jq -r '.data.createCommitOnBranch.commit.oid // empty' <<<"$resp")
+  [[ -n $oid ]] || { echo "agent-commit: GitHub refused part $part/$parts: $(jq -c '.errors // .' <<<"$resp")" >&2; exit 1; }
+  git fetch -q origin "+refs/heads/$branch:refs/remotes/origin/$branch"
+  if ((part == parts)); then
+    # Move the branch only if GitHub's last commit holds exactly what was staged.
+    if [[ $(git rev-parse "$oid^{tree}") != "$tree" ]]; then
+      echo "agent-commit: pushed $oid, but its tree differs from the staged one; local branch left at $head" >&2
+      exit 1
+    fi
+  fi
+  git reset -q --soft "$oid"
+  head=$oid
+  echo "[$branch ${oid:0:7}] $(git log -1 --format=%s "$oid")"
+done

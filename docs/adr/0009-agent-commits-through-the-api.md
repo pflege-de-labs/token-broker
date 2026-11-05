@@ -28,3 +28,6 @@ switches back to `git commit` per repository.
 - Commit and push are one step; local commits ahead of origin are refused.
 - The API has no file mode: new executables and mode changes need `git commit` and a squash merge.
 - Commits are authored by the app with GitHub's timestamps; trailers in the message are kept.
+- One request cannot carry a large change (HTTP 499 at ~17 MB of file contents). Since 2026-11-05
+  `agent-commit` splits changes over `AGENT_COMMIT_MAX_BYTES` (default 3 MB) into several commits
+  with ` (part i/n)` subjects; intermediate commits hold only part of the change.

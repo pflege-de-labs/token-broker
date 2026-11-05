@@ -7,6 +7,8 @@ short-lived agent tokens, never with the user's own `gh` login, git credentials 
   the commit and pushes it in the same step, so there is no separate `git push`.
   Rebase instead of merging, and pull before committing when origin moved.
   It refuses new executables and mode changes; for those, ask the user.
+  Large changes (over 3 MB, e.g. generated files) go up as several `(part i/n)` commits by
+  themselves; if it fails midway, rerun the same `agent-commit` to send the rest.
 - GitHub CLI: `agent-gh` instead of `gh` (in the agent devcontainer, `gh` already is that wrapper).
 - Worktrees: create them inside the checkout with relative paths,
   `git worktree add --relative-paths .worktrees/<name> -b <branch>` (git 2.48+), and add
