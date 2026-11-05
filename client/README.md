@@ -53,7 +53,7 @@ agent-commit -m "feat: something" -m "Body."   # or -F <file>
   changes: the API has no file mode, so new files land as `100644`. Commit those with `git commit`.
 - Changes whose file contents exceed `AGENT_COMMIT_MAX_BYTES` (default 3 MB, an estimate: GitHub
   answered a ~17 MB commit with HTTP 499) go up as several commits of at most that size, each
-  verified. All but the last get ` (part i/n)` appended to the subject; only the last holds the
+  verified. All but the last get `(part i/n)` appended to the subject; only the last holds the
   complete staged tree. If a part fails, the earlier ones stay on origin and the local branch is on
   them: rerun `agent-commit` to send the rest.
 - No merge commits; rebase onto the base branch instead.
