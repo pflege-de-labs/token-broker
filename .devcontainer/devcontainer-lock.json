@@ -1,9 +1,9 @@
 {
   "features": {
-    "ghcr.io/pflege-de-labs/devcontainer-features/agent-token@sha256:4083dc1b5bfb8d741f9c4c4c1ced6e44fb8552b25a6d7d7dbf6964fdd581751a": {
-      "version": "1.4.0",
-      "resolved": "ghcr.io/pflege-de-labs/devcontainer-features/agent-token@sha256:4083dc1b5bfb8d741f9c4c4c1ced6e44fb8552b25a6d7d7dbf6964fdd581751a",
-      "integrity": "sha256:4083dc1b5bfb8d741f9c4c4c1ced6e44fb8552b25a6d7d7dbf6964fdd581751a"
+    "ghcr.io/pflege-de-labs/devcontainer-features/agent-token@sha256:160a6b6f2fef68ef3c5c76695a98ee160d1985ff086211bfbdee2c88ab38d27d": {
+      "version": "1.5.0",
+      "resolved": "ghcr.io/pflege-de-labs/devcontainer-features/agent-token@sha256:160a6b6f2fef68ef3c5c76695a98ee160d1985ff086211bfbdee2c88ab38d27d",
+      "integrity": "sha256:160a6b6f2fef68ef3c5c76695a98ee160d1985ff086211bfbdee2c88ab38d27d"
     }
   }
 }
