@@ -4,13 +4,19 @@ set -euo pipefail
 cd "$(dirname "$0")"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-export TMPDIR=$tmp PATH="$tmp/bin:$PATH"
-mkdir -p "$tmp/bin" "$tmp/claude-agent-token"
+export TMPDIR=$tmp PATH="$tmp/bin:$PATH" XDG_CACHE_HOME=$tmp/cache
+mkdir -p "$tmp/bin" "$tmp/claude-agent-token" "$tmp/cache/agent-token"
+login() { echo "{\"access_token\": \"x\", \"expires_at\": $(($(date +%s) + $1))}" >"$tmp/cache/agent-token/login.json"; }
+login 3600
 echo org/repo >"$tmp/claude-agent-token/marked"
 
 # The stub gh answers `repo view` and the org variable lookup.
 cat >"$tmp/bin/gh" <<'EOF'
 #!/bin/sh
+case ${STUB_FAIL-} in
+  login) echo "agent-token: not logged in or login expired; run: agent-token --login" >&2; exit 1 ;;
+  ?*) exit 1 ;;
+esac
 case $1 in
   # With STUB_DIR set, only that folder is the repo.
   repo) [ -z "${STUB_DIR-}" ] || [ "$PWD" = "$STUB_DIR" ] && echo "${STUB_REPO-org/repo}" ;;
@@ -37,8 +43,40 @@ run marked 'agent-commit -m x' 0
 run marked 'agent-gh pr create --fill' 0
 run marked 'git status && git log' 0
 run marked 'git commit-tree HEAD^{tree}' 0
+run marked 'git --no-pager commit -m x' 2
+run marked 'git -c a=b -C /src/x push' 2
+run marked '/opt/homebrew/bin/gh pr create --fill' 2
+run marked '\gh pr create --fill' 2
+run marked 'cd ~/src/agent-gh-docs && ls' 0
 run other 'git push' 0
 run '../x' 'git push' 0
+
+# Missing or stale login: block writes, so Claude asks for a login instead of trying another way.
+for t in -60 120; do
+  login "$t"
+  run marked 'agent-commit -m x' 2
+  run marked 'agent-gh pr create --fill' 2
+  run marked 'agent-gh pr view 1' 0
+  run marked 'git status' 0
+done
+rm "$tmp/cache/agent-token/login.json"
+run marked 'agent-commit -m x' 2
+input marked 'git push' | hooks/guard.sh 2>"$tmp/err" || true
+grep -q 'agent-token --login' "$tmp/err" || { echo "FAIL no login hint: $(cat "$tmp/err")"; fail=1; }
+login 3600
+
+# gh is agent-gh without a login, so the topic is unknown: fail closed until the login is back.
+down() { # session, expected exit code, then env assignments
+  local got=0
+  input "$1" 'git push' | env "${@:3}" hooks/guard.sh 2>"$tmp/err" || got=$?
+  [[ $got == "$2" ]] || { echo "FAIL gh down ($1): exit $got, want $2: $(cat "$tmp/err")"; fail=1; }
+}
+down d1 2 STUB_FAIL=login
+grep -q 'agent-token --login' "$tmp/err" || { echo "FAIL gh down: no hint: $(cat "$tmp/err")"; fail=1; }
+down d1 0
+[[ ! -e $tmp/claude-agent-token/d1.unknown ]] || { echo "FAIL gh down: unknown mark kept"; fail=1; }
+# Any other gh failure, e.g. logged out or not a GitHub repo, stays silent as before.
+down d2 0 STUB_FAIL=other
 
 # Without jq the guard cannot read the command, so it blocks in marked sessions only.
 mkdir "$tmp/nojq"

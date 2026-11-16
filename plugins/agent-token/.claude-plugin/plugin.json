@@ -1,6 +1,6 @@
 {
   "name": "agent-token",
-  "description": "Brings the token-broker client scripts, tells Claude to commit and call GitHub as the agent app in repositories with the topic agent-token-broker, and blocks git commit, git push and gh with the user's credentials",
+  "description": "Brings the token-broker client scripts, tells Claude to commit and call GitHub as the agent app in repositories with the topic agent-token-broker, blocks git commit, git push and gh with the user's credentials, and asks for a new login when the agent login is stale",
   "author": {
     "name": "pflege.de"
   },
