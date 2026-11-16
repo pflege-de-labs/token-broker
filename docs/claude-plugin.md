@@ -24,7 +24,7 @@ Bash tool's `PATH`, after your own entries, so an `agent-token` from Homebrew or
 A `SessionStart` hook ([`session-start.sh`](../plugins/agent-token/hooks/session-start.sh)) reads
 the current repository's topics with `gh repo view`. github-ops sets the topic
 `agent-token-broker` on every repository with `agent: true`, the same flag that installs the agent
-app. Every other directory gets no output. With the topic, the hook:
+app. Every other directory gets no output, except the login warning below. With the topic, the hook:
 
 - checks for `jq`, `curl` and `git`; if one is missing, it tells Claude not to write to GitHub;
 - finds the broker URL: `TOKEN_BROKER_URL`, else the plugin option `broker_url` (`/config`), else
@@ -35,9 +35,18 @@ app. Every other directory gets no output. With the topic, the hook:
   `agent-token --check` to Claude's context.
 
 In such a session a `PreToolUse` hook ([`guard.sh`](../plugins/agent-token/hooks/guard.sh))
-blocks Bash commands with `git commit`, `git push` or a bare `gh`. Without `jq` it blocks every
-command, since it cannot read them. The session start leaves a marker in
-`$TMPDIR/claude-agent-token/<session id>` for it. Cases: `plugins/agent-token/test.sh`, run in CI.
+blocks Bash commands with `git commit`, `git push` (with any git options before them) or `gh` (also
+by its full path). Before those and before `agent-commit` and `agent-gh pr create` it runs
+`agent-token --check`: with a missing or stale login (expiring within 5 minutes) it blocks and
+tells Claude to ask for `! agent-token --login`, instead of letting it look for another way
+(ADR 17). Without `jq` it blocks every command, since it cannot read them. The session start
+leaves a marker in `$TMPDIR/claude-agent-token/<session id>` for it. Cases:
+`plugins/agent-token/test.sh`, run in CI.
+
+If `gh` is the `agent-gh` wrapper and `gh repo view` fails for want of a login, the topic is
+unknown: the session start tells Claude to ask for `! agent-token --login` and leaves
+`<session id>.unknown`, and the guard blocks `git commit`, `git push` and `gh` until the check
+works again. Other `gh` failures leave the session unguarded, as before.
 
 In an unmarked session the guard reruns the topic check before each `git commit`, `git push` or
 `gh` command, in the directory the command targets (`cd <dir> && …`, `git -C <dir>`, else the
@@ -48,9 +57,10 @@ outside the repo, get guarded too. Each such command in a repo without the topic
 
 ## Limits
 
-- It is a guardrail, not a sandbox: the guard matches command text, so `env git push`,
-  `/usr/bin/git push` or a script that pushes get through with the developer's credentials. For
-  isolation run the agent with [`agent-run`](local.md) or the [devcontainer](containers.md).
+- It is a guardrail, not a sandbox: the guard matches command text, so `g=git; $g push`,
+  `"$(command -v git)" push` or a script that pushes get through with the developer's credentials.
+  The GitHub MCP tools are not Bash commands and are not guarded. For isolation run the agent
+  with [`agent-run`](local.md) or the [devcontainer](containers.md).
 - The marker belongs to the session, not the directory: after a `cd` into another repo the guard
   still applies. The late check reads only the first `cd` or `-C` in a command, so
   `cd a && cd b && git push` is checked in `a`.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SessionStart: github-ops sets the topic agent-token-broker on every repo the agent app is installed on.
-# Prints context for Claude only in those repos; silent elsewhere and when gh cannot answer.
+# Prints context for Claude only in those repos, or a warning when agent-gh as gh lacks a login; silent elsewhere.
 set -euo pipefail
 # The plugin's bin/ is on the Bash tool's PATH, but hooks are not promised it.
 PATH="$(dirname "${BASH_SOURCE[0]}")/../bin:$PATH"
@@ -14,8 +14,18 @@ if [[ -n $sid && -n ${CLAUDE_ENV_FILE:-} ]]; then
   mkdir -p "$marks"
   echo "$CLAUDE_ENV_FILE" >"$marks/$sid.env"
 fi
-repo=$(gh repo view --json nameWithOwner,repositoryTopics \
-  --jq 'select(any(.repositoryTopics[]?; .name == "agent-token-broker")) | .nameWithOwner' 2>/dev/null) || exit 0
+[[ -z $sid ]] || rm -f "$marks/$sid.unknown"
+err=$(mktemp)
+trap 'rm -f "$err"' EXIT
+if ! repo=$(gh repo view --json nameWithOwner,repositoryTopics \
+  --jq 'select(any(.repositoryTopics[]?; .name == "agent-token-broker")) | .nameWithOwner' 2>"$err"); then
+  # gh is the agent-gh wrapper and the login expired: the topic is unknown, so fail closed (ADR 17).
+  grep -q 'agent-token --login' "$err" || exit 0
+  [[ -z $sid ]] || { mkdir -p "$marks"; : >"$marks/$sid.unknown"; }
+  echo "Cannot tell whether this repository uses token-broker agent tokens: gh is the agent-gh wrapper and the agent login is missing or expired."
+  echo "Do not commit, push or open PRs: stop and ask the user to run \`! agent-token --login\`."
+  exit 0
+fi
 [[ -n $repo ]] || exit 0
 # guard.sh blocks git commit/push and gh for marked sessions. Parsed without jq, so a missing jq still marks.
 if [[ -n $sid ]]; then
