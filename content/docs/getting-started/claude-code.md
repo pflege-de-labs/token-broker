@@ -49,17 +49,25 @@ does, Claude is told to commit and call GitHub with agent tokens, and the hook a
 `agent-token --check`. In every other directory the plugin stays silent.
 
 In such a session a `PreToolUse` hook blocks Bash commands that contain `git commit` or
-`git push`, and a bare `gh` where `agent-gh` exists. Claude uses [`agent-commit`](../../guides/signed-commits/)
-and `agent-gh` instead.
+`git push`, and `gh`, also called by its full path. Claude uses
+[`agent-commit`](../../guides/signed-commits/) and `agent-gh` instead.
+
+Before a commit, a push or `agent-gh pr create`, the hook also checks your login. If it is missing
+or expires within 5 minutes, the command is blocked and Claude asks you to run
+`! agent-token --login`, instead of committing or pushing another way.
+
+If your `gh` is the `agent-gh` wrapper and your login has expired, the plugin cannot read the
+topic either. Claude is then told to ask you for a login, and the hook blocks `git commit`,
+`git push` and `gh` until you have logged in.
 
 The check also runs later: before a `git commit`, `git push` or `gh` command in an unguarded
 session, the guard checks the repository the command targets. A session started before the app was
 installed, or in a parent directory, is guarded from that command on.
 
 {{< callout type="warning" >}}
-The plugin is a guardrail, not a sandbox. The hook matches command text, so `env git push` or a
-script that pushes get through with your credentials. For isolation use the
-[container](../container/) or the [Dev Container](../devcontainer/). See the
+The plugin is a guardrail, not a sandbox. The hook matches command text, so `g=git; $g push` or a
+script that pushes get through with your credentials. GitHub MCP tools are not checked. For
+isolation use the [container](../container/) or the [Dev Container](../devcontainer/). See the
 [security model](../../concepts/security-model/).
 {{< /callout >}}
 

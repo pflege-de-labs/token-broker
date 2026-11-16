@@ -51,8 +51,16 @@ wird Claude angewiesen, mit Agent-Tokens zu committen und GitHub aufzurufen, und
 das Ergebnis von `agent-token --check`. In allen anderen Verzeichnissen bleibt das Plugin still.
 
 In einer solchen Sitzung blockiert ein `PreToolUse`-Hook Bash-Befehle mit `git commit` oder
-`git push` sowie ein bloßes `gh`, wo `agent-gh` existiert. Claude nutzt stattdessen
+`git push` sowie `gh`, auch mit vollem Pfad aufgerufen. Claude nutzt stattdessen
 [`agent-commit`](../../guides/signed-commits/) und `agent-gh`.
+
+Vor einem Commit, einem Push oder `agent-gh pr create` prüft der Hook außerdem Ihren Login. Fehlt
+er oder läuft er in weniger als 5 Minuten ab, wird der Befehl blockiert, und Claude bittet Sie,
+`! agent-token --login` auszuführen, statt auf anderem Weg zu committen oder zu pushen.
+
+Ist Ihr `gh` der `agent-gh`-Wrapper und Ihr Login abgelaufen, kann das Plugin auch das Topic
+nicht lesen. Claude wird dann angewiesen, Sie um einen Login zu bitten, und der Hook blockiert
+`git commit`, `git push` und `gh`, bis Sie sich angemeldet haben.
 
 Die Prüfung läuft auch später: Vor einem `git commit`, `git push` oder `gh`-Befehl in einer
 ungeschützten Sitzung prüft der Guard das Repository, auf das der Befehl zielt. Eine Sitzung, die vor
@@ -61,7 +69,8 @@ Befehl geschützt.
 
 {{< callout type="warning" >}}
 Das Plugin ist eine Leitplanke, keine Sandbox. Der Hook vergleicht Befehlstext, daher kommen
-`env git push` oder ein Skript, das pusht, mit Ihren Zugangsdaten durch. Für Isolation nutzen Sie
+`g=git; $g push` oder ein Skript, das pusht, mit Ihren Zugangsdaten durch. GitHub-MCP-Tools werden
+nicht geprüft. Für Isolation nutzen Sie
 den [Container](../container/) oder den [Dev Container](../devcontainer/). Siehe das
 [Sicherheitsmodell](../../concepts/security-model/).
 {{< /callout >}}

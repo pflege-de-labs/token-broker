@@ -42,11 +42,13 @@ Teams nennt: Bots können keine Code Owner sein. Siehe
 ## Das Plugin ist eine Leitplanke, keine Sandbox {#the-plugin-is-a-guardrail-not-a-sandbox}
 
 Das Claude-Code-Plugin weist Claude an, Agent-Tokens zu nutzen, und blockiert `git commit`,
-`git push` und ein bloßes `gh`, indem es Befehlstext vergleicht. Ein Befehl wie `env git push`,
-`/usr/bin/git push` oder ein Skript, das pusht, kommt durch und nutzt die Zugangsdaten des
-Entwicklers. Die Sperre folgt außerdem der Sitzung, nicht dem Verzeichnis: Nach einem `cd` in ein
-anderes Repository gilt sie weiter, und eine Sitzung, die außerhalb eines agent-token-Repositorys
-gestartet wurde, bleibt ungeschützt.
+`git push` und `gh`, indem es Befehlstext vergleicht. Fehlt der Agent-Login oder ist er veraltet,
+blockiert es Commits, Pushes und neue Pull Requests, damit Claude um einen Login bittet, statt den
+SSH-Schlüssel des Entwicklers zu nutzen; hindert der abgelaufene Login es daran, die Topics eines
+Repositorys zu lesen, blockiert es diese ebenfalls. Ein Befehl wie `g=git; $g push` oder ein Skript,
+das pusht, kommt durch und nutzt die Zugangsdaten des Entwicklers, und GitHub-MCP-Tools werden nicht
+geprüft. Die Sperre folgt außerdem der Sitzung, nicht dem Verzeichnis: Nach einem `cd` in ein
+anderes Repository gilt sie weiter.
 
 Repository-Admins können Topics von Hand ändern. Ein falsches Topic kostet einen fehlgeschlagenen
 Aufruf und sonst nichts, weil der Broker Tokens dort ablehnt, wo die App nicht installiert ist.
