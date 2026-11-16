@@ -37,11 +37,13 @@ and have a `CODEOWNERS` file that names human teams: bots cannot be code owners.
 
 ## The plugin is a guardrail, not a sandbox
 
-The Claude Code plugin tells Claude to use agent tokens and blocks `git commit`, `git push` and a
-bare `gh` by matching command text. A command like `env git push`, `/usr/bin/git push` or a
-script that pushes gets through and uses the developer's credentials. The block also follows the
-session, not the directory: after a `cd` into another repository it still applies, and a session
-started outside an agent-token repository stays unguarded.
+The Claude Code plugin tells Claude to use agent tokens and blocks `git commit`, `git push` and `gh`
+by matching command text. With a missing or stale agent login it blocks commits, pushes and new pull
+requests, so Claude asks for a login instead of using the developer's SSH key; if the expired login
+keeps it from reading a repository's topics, it blocks them too (fail closed). A command like
+`g=git; $g push` or a script that pushes gets through and uses the developer's credentials, and
+GitHub MCP tools are not checked. The block also follows the session, not the directory: after a
+`cd` into another repository it still applies.
 
 Repository admins can edit topics by hand. A wrong topic costs a failed call and nothing more,
 because the broker refuses tokens where the app is not installed.
