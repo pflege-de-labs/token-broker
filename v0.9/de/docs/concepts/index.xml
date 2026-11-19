@@ -97,11 +97,13 @@ Teams nennt: Bots können keine Code Owner sein. Siehe
 &lt;a href="../../guides/review-rules/"&gt;Review-Regeln setzen&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;Das Plugin ist eine Leitplanke, keine Sandbox&lt;span class="hx:absolute hx:-mt-20" id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;&lt;/span&gt;
 &lt;a href="#the-plugin-is-a-guardrail-not-a-sandbox" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Das Claude-Code-Plugin weist Claude an, Agent-Tokens zu nutzen, und blockiert &lt;code&gt;git commit&lt;/code&gt;,
-&lt;code&gt;git push&lt;/code&gt; und ein bloßes &lt;code&gt;gh&lt;/code&gt;, indem es Befehlstext vergleicht. Ein Befehl wie &lt;code&gt;env git push&lt;/code&gt;,
-&lt;code&gt;/usr/bin/git push&lt;/code&gt; oder ein Skript, das pusht, kommt durch und nutzt die Zugangsdaten des
-Entwicklers. Die Sperre folgt außerdem der Sitzung, nicht dem Verzeichnis: Nach einem &lt;code&gt;cd&lt;/code&gt; in ein
-anderes Repository gilt sie weiter, und eine Sitzung, die außerhalb eines agent-token-Repositorys
-gestartet wurde, bleibt ungeschützt.&lt;/p&gt;
+&lt;code&gt;git push&lt;/code&gt; und &lt;code&gt;gh&lt;/code&gt;, indem es Befehlstext vergleicht. Fehlt der Agent-Login oder ist er veraltet,
+blockiert es Commits, Pushes und neue Pull Requests, damit Claude um einen Login bittet, statt den
+SSH-Schlüssel des Entwicklers zu nutzen; hindert der abgelaufene Login es daran, die Topics eines
+Repositorys zu lesen, blockiert es diese ebenfalls. Ein Befehl wie &lt;code&gt;g=git; $g push&lt;/code&gt; oder ein Skript,
+das pusht, kommt durch und nutzt die Zugangsdaten des Entwicklers, und GitHub-MCP-Tools werden nicht
+geprüft. Die Sperre folgt außerdem der Sitzung, nicht dem Verzeichnis: Nach einem &lt;code&gt;cd&lt;/code&gt; in ein
+anderes Repository gilt sie weiter.&lt;/p&gt;
 &lt;p&gt;Repository-Admins können Topics von Hand ändern. Ein falsches Topic kostet einen fehlgeschlagenen
 Aufruf und sonst nichts, weil der Broker Tokens dort ablehnt, wo die App nicht installiert ist.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="host-versus-container"&gt;Rechner versus Container&lt;span class="hx:absolute hx:-mt-20" id="host-versus-container"&gt;&lt;/span&gt;

@@ -118,17 +118,23 @@ data-copied-label="Copied!"
 does, Claude is told to commit and call GitHub with agent tokens, and the hook adds the result of
 &lt;code&gt;agent-token --check&lt;/code&gt;. In every other directory the plugin stays silent.&lt;/p&gt;
 &lt;p&gt;In such a session a &lt;code&gt;PreToolUse&lt;/code&gt; hook blocks Bash commands that contain &lt;code&gt;git commit&lt;/code&gt; or
-&lt;code&gt;git push&lt;/code&gt;, and a bare &lt;code&gt;gh&lt;/code&gt; where &lt;code&gt;agent-gh&lt;/code&gt; exists. Claude uses &lt;a href="../../guides/signed-commits/"&gt;&lt;code&gt;agent-commit&lt;/code&gt;&lt;/a&gt;
-and &lt;code&gt;agent-gh&lt;/code&gt; instead.&lt;/p&gt;
+&lt;code&gt;git push&lt;/code&gt;, and &lt;code&gt;gh&lt;/code&gt;, also called by its full path. Claude uses
+&lt;a href="../../guides/signed-commits/"&gt;&lt;code&gt;agent-commit&lt;/code&gt;&lt;/a&gt; and &lt;code&gt;agent-gh&lt;/code&gt; instead.&lt;/p&gt;
+&lt;p&gt;Before a commit, a push or &lt;code&gt;agent-gh pr create&lt;/code&gt;, the hook also checks your login. If it is missing
+or expires within 5 minutes, the command is blocked and Claude asks you to run
+&lt;code&gt;! agent-token --login&lt;/code&gt;, instead of committing or pushing another way.&lt;/p&gt;
+&lt;p&gt;If your &lt;code&gt;gh&lt;/code&gt; is the &lt;code&gt;agent-gh&lt;/code&gt; wrapper and your login has expired, the plugin cannot read the
+topic either. Claude is then told to ask you for a login, and the hook blocks &lt;code&gt;git commit&lt;/code&gt;,
+&lt;code&gt;git push&lt;/code&gt; and &lt;code&gt;gh&lt;/code&gt; until you have logged in.&lt;/p&gt;
 &lt;p&gt;The check also runs later: before a &lt;code&gt;git commit&lt;/code&gt;, &lt;code&gt;git push&lt;/code&gt; or &lt;code&gt;gh&lt;/code&gt; command in an unguarded
 session, the guard checks the repository the command targets. A session started before the app was
 installed, or in a parent directory, is guarded from that command on.&lt;/p&gt;
 &lt;div class="hx:overflow-x-auto hx:mt-6 hx:flex hx:rounded-lg hx:border hx:py-2 hx:ltr:pr-4 hx:rtl:pl-4 hx:contrast-more:border-current hx:contrast-more:dark:border-current hx:border-amber-200 hx:bg-amber-100 hx:text-amber-900 hx:dark:border-amber-200/30 hx:dark:bg-amber-900/30 hx:dark:text-amber-200"&gt;
 &lt;div class="hx:ltr:pl-3 hx:ltr:pr-2 hx:rtl:pr-3 hx:rtl:pl-2"&gt;&lt;svg height=1.2em class="hx:inline-block hx:align-middle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/&gt;&lt;/svg&gt;&lt;/div&gt;
 &lt;div class="hx:w-full hx:min-w-0 hx:leading-7"&gt;
-&lt;div class="hx:mt-6 hx:leading-7 hx:first:mt-0"&gt;The plugin is a guardrail, not a sandbox. The hook matches command text, so &lt;code&gt;env git push&lt;/code&gt; or a
-script that pushes get through with your credentials. For isolation use the
-&lt;a href="../container/"&gt;container&lt;/a&gt; or the &lt;a href="../devcontainer/"&gt;Dev Container&lt;/a&gt;. See the
+&lt;div class="hx:mt-6 hx:leading-7 hx:first:mt-0"&gt;The plugin is a guardrail, not a sandbox. The hook matches command text, so &lt;code&gt;g=git; $g push&lt;/code&gt; or a
+script that pushes get through with your credentials. GitHub MCP tools are not checked. For
+isolation use the &lt;a href="../container/"&gt;container&lt;/a&gt; or the &lt;a href="../devcontainer/"&gt;Dev Container&lt;/a&gt;. See the
 &lt;a href="../../concepts/security-model/"&gt;security model&lt;/a&gt;.&lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
@@ -647,11 +653,13 @@ required reviews. Every repository it is installed on must therefore require a c
 and have a &lt;code&gt;CODEOWNERS&lt;/code&gt; file that names human teams: bots cannot be code owners. See
 &lt;a href="../../guides/review-rules/"&gt;Set review rules&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;The plugin is a guardrail, not a sandbox&lt;span class="hx:absolute hx:-mt-20" id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;&lt;/span&gt;
-&lt;a href="#the-plugin-is-a-guardrail-not-a-sandbox" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;The Claude Code plugin tells Claude to use agent tokens and blocks &lt;code&gt;git commit&lt;/code&gt;, &lt;code&gt;git push&lt;/code&gt; and a
-bare &lt;code&gt;gh&lt;/code&gt; by matching command text. A command like &lt;code&gt;env git push&lt;/code&gt;, &lt;code&gt;/usr/bin/git push&lt;/code&gt; or a
-script that pushes gets through and uses the developer&amp;rsquo;s credentials. The block also follows the
-session, not the directory: after a &lt;code&gt;cd&lt;/code&gt; into another repository it still applies, and a session
-started outside an agent-token repository stays unguarded.&lt;/p&gt;
+&lt;a href="#the-plugin-is-a-guardrail-not-a-sandbox" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;The Claude Code plugin tells Claude to use agent tokens and blocks &lt;code&gt;git commit&lt;/code&gt;, &lt;code&gt;git push&lt;/code&gt; and &lt;code&gt;gh&lt;/code&gt;
+by matching command text. With a missing or stale agent login it blocks commits, pushes and new pull
+requests, so Claude asks for a login instead of using the developer&amp;rsquo;s SSH key; if the expired login
+keeps it from reading a repository&amp;rsquo;s topics, it blocks them too (fail closed). A command like
+&lt;code&gt;g=git; $g push&lt;/code&gt; or a script that pushes gets through and uses the developer&amp;rsquo;s credentials, and
+GitHub MCP tools are not checked. The block also follows the session, not the directory: after a
+&lt;code&gt;cd&lt;/code&gt; into another repository it still applies.&lt;/p&gt;
 &lt;p&gt;Repository admins can edit topics by hand. A wrong topic costs a failed call and nothing more,
 because the broker refuses tokens where the app is not installed.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="host-versus-container"&gt;Host versus container&lt;span class="hx:absolute hx:-mt-20" id="host-versus-container"&gt;&lt;/span&gt;
