@@ -54,6 +54,12 @@ In einer solchen Sitzung blockiert ein `PreToolUse`-Hook Bash-Befehle mit `git c
 `git push` sowie `gh`, auch mit vollem Pfad aufgerufen. Claude nutzt stattdessen
 [`agent-commit`](../../guides/signed-commits/) und `agent-gh`.
 
+`gh` in einem einzelnen, alleinstehenden `podman exec`, `docker exec` oder `devcontainer exec` ist
+erlaubt, denn im [Dev Container](../devcontainer/) ist `gh` der Wrapper mit dem eigenen Login des
+Containers. Der Befehl für den Container steht in einfachen Anführungszeichen, zum Beispiel
+`podman exec -u vscode <container> bash -lc 'gh pr create --fill'`. Befehle, die um das exec
+herum verkettet sind, `GH_TOKEN`, `GITHUB_TOKEN`, `--env-file` und `gh` mit Pfad bleiben blockiert.
+
 Vor einem Commit, einem Push oder `agent-gh pr create` prüft der Hook außerdem Ihren Login. Fehlt
 er oder läuft er in weniger als 5 Minuten ab, wird der Befehl blockiert, und Claude bittet Sie,
 `! agent-token --login` auszuführen, statt auf anderem Weg zu committen oder zu pushen.
@@ -69,8 +75,9 @@ Befehl geschützt.
 
 {{< callout type="warning" >}}
 Das Plugin ist eine Leitplanke, keine Sandbox. Der Hook vergleicht Befehlstext, daher kommen
-`g=git; $g push` oder ein Skript, das pusht, mit Ihren Zugangsdaten durch. GitHub-MCP-Tools werden
-nicht geprüft. Für Isolation nutzen Sie
+`g=git; $g push` oder ein Skript, das pusht, mit Ihren Zugangsdaten durch. Er prüft auch nicht, auf
+welchen Container ein exec zielt: Einer, dessen `gh` Ihren Login hat, kommt durch.
+GitHub-MCP-Tools werden nicht geprüft. Für Isolation nutzen Sie
 den [Container](../container/) oder den [Dev Container](../devcontainer/). Siehe das
 [Sicherheitsmodell](../../concepts/security-model/).
 {{< /callout >}}
