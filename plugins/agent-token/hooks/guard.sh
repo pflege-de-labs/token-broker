@@ -16,14 +16,15 @@ write_re='(^|[^[:alnum:]_-])agent-(commit|gh[[:space:]]+pr[[:space:]]+create)([^
 cmd=$(jq -r '.tool_input.command // empty' <<<"$input" 2>/dev/null) || cmd=${input//\"/ }
 # gh in one standalone exec into a container is the container's gh: in the agent devcontainer, the wrapper (ADR 18).
 # shortcut: trusts the container to be the agent devcontainer; probe its gh if other containers get gh credentials.
+quoted_re="^([^']*)'[^']*'(.*)$"
+# [:blank:], not [:space:]: a newline outside quotes starts a host command.
+exec_re='^[[:blank:]]*(podman|docker|devcontainer)[[:blank:]]+exec[[:blank:]][[:alnum:][:blank:]_./:=@,+%-]*$'
+leak_re='(GH|GITHUB)_TOKEN|--env-file|[/\\]gh([[:space:]]|$)'
 gh_cmd=$cmd
 host=$cmd
 # Single-quoted text goes to the container as is; the host shell expands only the rest.
-while [[ $host =~ ^([^\']*)\'[^\']*\'(.*)$ ]]; do host="${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"; done
-if [[ $host =~ ^[[:space:]]*(podman|docker|devcontainer)[[:space:]]+exec[[:space:]][[:alnum:][:space:]_./:=@,+%-]*$ &&
-  ! $cmd =~ (GH|GITHUB)_TOKEN|--env-file|[/\\]gh([[:space:]]|$) ]]; then
-  gh_cmd=
-fi
+while [[ $host =~ $quoted_re ]]; do host="${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"; done
+if [[ $host =~ $exec_re && ! $cmd =~ $leak_re ]]; then gh_cmd=; fi
 if [[ ! -f $mark ]]; then
   # The app may have been installed after SessionStart: recheck, but only for commands guarded below.
   # shortcut: one gh repo view per such command in other repos; add a negative cache if that is too slow.

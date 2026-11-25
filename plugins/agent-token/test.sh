@@ -51,7 +51,8 @@ run marked 'cd ~/src/agent-gh-docs && ls' 0
 # One standalone exec into the devcontainer runs its gh, the agent wrapper; the host shell must not run gh.
 # shellcheck disable=SC2016 # literal command text
 for c in "podman exec -u vscode c bash -lc 'cd /tmp/x && gh pr create --fill'" 'podman exec c gh pr view 1' \
-  "docker exec -i c bash -lc 'x=\$(gh api user)'" "devcontainer exec --workspace-folder . gh pr list"; do
+  "docker exec -i c bash -lc 'x=\$(gh api user)'" "devcontainer exec --workspace-folder . gh pr list" \
+  $'podman exec c bash -lc \'true\ngh pr list\''; do
   run marked "$c" 0
 done
 # shellcheck disable=SC2016 # literal command text
@@ -59,7 +60,8 @@ for c in 'podman exec c true; gh pr create --fill' 'podman exec c true && gh pr 
   'podman exec -e GH_TOKEN=$(gh auth token) c gh pr list' 'podman exec c bash -lc "x=$(gh api user)"' \
   "podman exec c echo \"'\" ; gh pr create ; echo \"'\"" 'podman exec -e GH_TOKEN c gh api user' \
   'podman exec --env-file f c gh api user' 'podman exec c /usr/bin/gh pr create' "podman exec c bash -lc '\\gh pr list'" \
-  'echo podman exec c gh pr list | sh' 'podman exec c git commit -m x'; do
+  'echo podman exec c gh pr list | sh' 'podman exec c git commit -m x' $'podman exec c true\ngh pr create --fill' \
+  $'podman exec c bash -lc \'true\'\ngh pr list'; do
   run marked "$c" 2
 done
 run other 'git push' 0

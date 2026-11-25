@@ -16,8 +16,8 @@ not the container's.
 
 - The guard does not count `gh` as a host call when the whole command is one
   `podman exec`, `docker exec` or `devcontainer exec`, and everything outside single quotes is
-  plain words (letters, digits, `_ . / : = @ , + % -`). Single-quoted text reaches the
-  container unexpanded.
+  plain words on one line (letters, digits, spaces, tabs, `_ . / : = @ , + % -`). Single-quoted
+  text reaches the container unexpanded.
 - It still blocks when the command names `GH_TOKEN`, `GITHUB_TOKEN` or `--env-file`, which could
   hand the user's token to the container, and when it calls `gh` by a path, which skips the
   wrapper.
@@ -29,7 +29,8 @@ not the container's.
 - **Ship `agent-gh` in the devcontainer feature:** needs a release in another repository and
   still leaves the host login check pointing at the wrong cache.
 - **Probe the target container for the wrapper:** parsing the container name out of `exec` options
-  is fragile, and the guard is a guardrail anyway (ADR 10).
+  is fragile, and the guard only matches command text anyway (see the limits in
+  [claude-plugin.md](../claude-plugin.md#limits)).
 
 ## Consequences
 
