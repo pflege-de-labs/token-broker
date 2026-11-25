@@ -48,6 +48,20 @@ run marked 'git -c a=b -C /src/x push' 2
 run marked '/opt/homebrew/bin/gh pr create --fill' 2
 run marked '\gh pr create --fill' 2
 run marked 'cd ~/src/agent-gh-docs && ls' 0
+# One standalone exec into the devcontainer runs its gh, the agent wrapper; the host shell must not run gh.
+# shellcheck disable=SC2016 # literal command text
+for c in "podman exec -u vscode c bash -lc 'cd /tmp/x && gh pr create --fill'" 'podman exec c gh pr view 1' \
+  "docker exec -i c bash -lc 'x=\$(gh api user)'" "devcontainer exec --workspace-folder . gh pr list"; do
+  run marked "$c" 0
+done
+# shellcheck disable=SC2016 # literal command text
+for c in 'podman exec c true; gh pr create --fill' 'podman exec c true && gh pr list' 'gh pr list && podman exec c true' \
+  'podman exec -e GH_TOKEN=$(gh auth token) c gh pr list' 'podman exec c bash -lc "x=$(gh api user)"' \
+  "podman exec c echo \"'\" ; gh pr create ; echo \"'\"" 'podman exec -e GH_TOKEN c gh api user' \
+  'podman exec --env-file f c gh api user' 'podman exec c /usr/bin/gh pr create' "podman exec c bash -lc '\\gh pr list'" \
+  'echo podman exec c gh pr list | sh' 'podman exec c git commit -m x'; do
+  run marked "$c" 2
+done
 run other 'git push' 0
 run '../x' 'git push' 0
 
@@ -58,6 +72,8 @@ for t in -60 120; do
   run marked 'agent-gh pr create --fill' 2
   run marked 'agent-gh pr view 1' 0
   run marked 'git status' 0
+  # The devcontainer has its own login cache.
+  run marked "podman exec c bash -lc 'gh pr create --fill'" 0
 done
 rm "$tmp/cache/agent-token/login.json"
 run marked 'agent-commit -m x' 2
@@ -116,6 +132,7 @@ cwd ws1 'git push' 0
 cwd ws2 'cd repo && git push' 2
 cwd ws3 'git -C repo push' 2
 cwd ws4 'cd "repo"; gh pr list' 2
+cwd ws6 "cd repo && podman exec c gh pr list" 2
 cwd ws5 'cd elsewhere && git push' 0
 unset STUB_REPO
 

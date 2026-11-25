@@ -9,8 +9,10 @@ short-lived agent tokens, never with the user's own `gh` login, git credentials 
   It refuses new executables and mode changes; for those, ask the user.
   Large changes (over 3 MB, e.g. generated files) go up as several `(part i/n)` commits by
   themselves; if it fails midway, rerun the same `agent-commit` to send the rest.
-- GitHub CLI: `agent-gh` instead of `gh` (in the agent devcontainer, `gh` already is that wrapper).
-  If `agent-gh` is missing or fails, ask the user; never call `gh` by another path.
+- GitHub CLI: `agent-gh` instead of `gh`. In the agent devcontainer `gh` already is that wrapper;
+  from the host, run it there in one standalone command with the container part in single quotes:
+  `podman exec -u vscode <container> bash -lc '<gh command>'`.
+  If that fails, ask the user; never call `gh` by another path.
 - Worktrees: create them inside the checkout with relative paths,
   `git worktree add --relative-paths .worktrees/<name> -b <branch>` (git 2.48+), and add
   `/.worktrees/` to `.git/info/exclude`. A devcontainer mounts only the checkout, so worktrees

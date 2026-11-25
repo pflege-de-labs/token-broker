@@ -14,10 +14,20 @@ commit_re='(^|[^[:alnum:]_-])git([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:spa
 gh_re='(^|[;&|({[:space:]/\\`"'\''])gh([[:space:]]|$)'
 write_re='(^|[^[:alnum:]_-])agent-(commit|gh[[:space:]]+pr[[:space:]]+create)([^[:alnum:]_-]|$)'
 cmd=$(jq -r '.tool_input.command // empty' <<<"$input" 2>/dev/null) || cmd=${input//\"/ }
+# gh in one standalone exec into a container is the container's gh: in the agent devcontainer, the wrapper (ADR 18).
+# shortcut: trusts the container to be the agent devcontainer; probe its gh if other containers get gh credentials.
+gh_cmd=$cmd
+host=$cmd
+# Single-quoted text goes to the container as is; the host shell expands only the rest.
+while [[ $host =~ ^([^\']*)\'[^\']*\'(.*)$ ]]; do host="${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"; done
+if [[ $host =~ ^[[:space:]]*(podman|docker|devcontainer)[[:space:]]+exec[[:space:]][[:alnum:][:space:]_./:=@,+%-]*$ &&
+  ! $cmd =~ (GH|GITHUB)_TOKEN|--env-file|[/\\]gh([[:space:]]|$) ]]; then
+  gh_cmd=
+fi
 if [[ ! -f $mark ]]; then
   # The app may have been installed after SessionStart: recheck, but only for commands guarded below.
   # shortcut: one gh repo view per such command in other repos; add a negative cache if that is too slow.
-  grep -Eq "$commit_re|$gh_re" <<<"$cmd" || exit 0
+  grep -Eq "$commit_re" <<<"$cmd" || grep -Eq "$gh_re" <<<"$gh_cmd" || exit 0
   cwd=$(jq -r '.cwd // empty' <<<"$input" 2>/dev/null) || cwd=
   [[ -z $cwd ]] || cd "$cwd" 2>/dev/null || true
   # `cd repo && git push` and `git -C repo push` act on another repo than cwd; first one wins.
@@ -34,7 +44,7 @@ fi
 command -v jq >/dev/null || { echo "agent-token repo: jq is missing, so commands cannot be checked; ask the user to install jq." >&2; exit 2; }
 
 # Checked first: after a failed agent-commit, Claude would otherwise look for another way to push.
-if grep -Eq "$commit_re|$gh_re|$write_re" <<<"$cmd" &&
+if { grep -Eq "$commit_re|$write_re" <<<"$cmd" || grep -Eq "$gh_re" <<<"$gh_cmd"; } &&
   # --check reads only the cache, but the script wants a URL before it parses flags.
   ! PATH="$here/../bin:$PATH" TOKEN_BROKER_URL=${TOKEN_BROKER_URL:-https://unused} agent-token --check 2>/dev/null; then
   echo "agent-token repo: the agent login is missing or expires within 5 minutes. Stop and ask the user to run \`! agent-token --login\`, then retry. Do not commit, push or open PRs any other way (git, gh, SSH or MCP)." >&2
@@ -44,8 +54,8 @@ if grep -Eq "$commit_re" <<<"$cmd"; then
   echo "agent-token repo: commit with agent-commit, which also pushes; not git commit or git push. For new executables, mode changes or force pushes, ask the user." >&2
   exit 2
 fi
-# agent-gh ships in the plugin's bin/; in the agent devcontainer it also works, wrapping the gh wrapper.
-if grep -Eq "$gh_re" <<<"$cmd"; then
-  echo "agent-token repo: use agent-gh instead of gh, so GitHub sees the agent app, not the user. If agent-gh is missing or fails, ask the user; never fall back to gh." >&2
+# agent-gh ships in the plugin's bin/; inside the agent devcontainer gh itself is the wrapper.
+if grep -Eq "$gh_re" <<<"$gh_cmd"; then
+  echo "agent-token repo: use agent-gh instead of gh, so GitHub sees the agent app, not the user. In the agent devcontainer, run gh there in one standalone command: podman exec <container> bash -lc '<gh command>'. If that fails, ask the user; never fall back to gh." >&2
   exit 2
 fi
