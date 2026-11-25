@@ -90,11 +90,13 @@ required reviews. Every repository it is installed on must therefore require a c
 and have a &lt;code&gt;CODEOWNERS&lt;/code&gt; file that names human teams: bots cannot be code owners. See
 &lt;a href="../../guides/review-rules/"&gt;Set review rules&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;The plugin is a guardrail, not a sandbox&lt;span class="hx:absolute hx:-mt-20" id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;&lt;/span&gt;
-&lt;a href="#the-plugin-is-a-guardrail-not-a-sandbox" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;The Claude Code plugin tells Claude to use agent tokens and blocks &lt;code&gt;git commit&lt;/code&gt;, &lt;code&gt;git push&lt;/code&gt; and a
-bare &lt;code&gt;gh&lt;/code&gt; by matching command text. A command like &lt;code&gt;env git push&lt;/code&gt;, &lt;code&gt;/usr/bin/git push&lt;/code&gt; or a
-script that pushes gets through and uses the developer&amp;rsquo;s credentials. The block also follows the
-session, not the directory: after a &lt;code&gt;cd&lt;/code&gt; into another repository it still applies, and a session
-started outside an agent-token repository stays unguarded.&lt;/p&gt;
+&lt;a href="#the-plugin-is-a-guardrail-not-a-sandbox" class="subheading-anchor" aria-label="Permalink for this section"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;The Claude Code plugin tells Claude to use agent tokens and blocks &lt;code&gt;git commit&lt;/code&gt;, &lt;code&gt;git push&lt;/code&gt; and &lt;code&gt;gh&lt;/code&gt;
+by matching command text. With a missing or stale agent login it blocks commits, pushes and new pull
+requests, so Claude asks for a login instead of using the developer&amp;rsquo;s SSH key; if the expired login
+keeps it from reading a repository&amp;rsquo;s topics, it blocks them too (fail closed). A command like
+&lt;code&gt;g=git; $g push&lt;/code&gt; or a script that pushes gets through and uses the developer&amp;rsquo;s credentials, and
+GitHub MCP tools are not checked. The block also follows the session, not the directory: after a
+&lt;code&gt;cd&lt;/code&gt; into another repository it still applies.&lt;/p&gt;
 &lt;p&gt;Repository admins can edit topics by hand. A wrong topic costs a failed call and nothing more,
 because the broker refuses tokens where the app is not installed.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="host-versus-container"&gt;Host versus container&lt;span class="hx:absolute hx:-mt-20" id="host-versus-container"&gt;&lt;/span&gt;

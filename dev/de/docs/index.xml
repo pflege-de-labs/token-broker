@@ -122,8 +122,19 @@ in &lt;code&gt;~/.cache/agent-token/login.json&lt;/code&gt;.&lt;/p&gt;
 wird Claude angewiesen, mit Agent-Tokens zu committen und GitHub aufzurufen, und der Hook ergänzt
 das Ergebnis von &lt;code&gt;agent-token --check&lt;/code&gt;. In allen anderen Verzeichnissen bleibt das Plugin still.&lt;/p&gt;
 &lt;p&gt;In einer solchen Sitzung blockiert ein &lt;code&gt;PreToolUse&lt;/code&gt;-Hook Bash-Befehle mit &lt;code&gt;git commit&lt;/code&gt; oder
-&lt;code&gt;git push&lt;/code&gt; sowie ein bloßes &lt;code&gt;gh&lt;/code&gt;, wo &lt;code&gt;agent-gh&lt;/code&gt; existiert. Claude nutzt stattdessen
+&lt;code&gt;git push&lt;/code&gt; sowie &lt;code&gt;gh&lt;/code&gt;, auch mit vollem Pfad aufgerufen. Claude nutzt stattdessen
 &lt;a href="../../guides/signed-commits/"&gt;&lt;code&gt;agent-commit&lt;/code&gt;&lt;/a&gt; und &lt;code&gt;agent-gh&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;gh&lt;/code&gt; in einem einzelnen, alleinstehenden &lt;code&gt;podman exec&lt;/code&gt;, &lt;code&gt;docker exec&lt;/code&gt; oder &lt;code&gt;devcontainer exec&lt;/code&gt; ist
+erlaubt, denn im &lt;a href="../devcontainer/"&gt;Dev Container&lt;/a&gt; ist &lt;code&gt;gh&lt;/code&gt; der Wrapper mit dem eigenen Login des
+Containers. Der Befehl für den Container steht in einfachen Anführungszeichen, zum Beispiel
+&lt;code&gt;podman exec -u vscode &amp;lt;container&amp;gt; bash -lc 'gh pr create --fill'&lt;/code&gt;. Befehle, die um das exec
+herum verkettet sind, &lt;code&gt;GH_TOKEN&lt;/code&gt;, &lt;code&gt;GITHUB_TOKEN&lt;/code&gt;, &lt;code&gt;--env-file&lt;/code&gt; und &lt;code&gt;gh&lt;/code&gt; mit Pfad bleiben blockiert.&lt;/p&gt;
+&lt;p&gt;Vor einem Commit, einem Push oder &lt;code&gt;agent-gh pr create&lt;/code&gt; prüft der Hook außerdem Ihren Login. Fehlt
+er oder läuft er in weniger als 5 Minuten ab, wird der Befehl blockiert, und Claude bittet Sie,
+&lt;code&gt;! agent-token --login&lt;/code&gt; auszuführen, statt auf anderem Weg zu committen oder zu pushen.&lt;/p&gt;
+&lt;p&gt;Ist Ihr &lt;code&gt;gh&lt;/code&gt; der &lt;code&gt;agent-gh&lt;/code&gt;-Wrapper und Ihr Login abgelaufen, kann das Plugin auch das Topic
+nicht lesen. Claude wird dann angewiesen, Sie um einen Login zu bitten, und der Hook blockiert
+&lt;code&gt;git commit&lt;/code&gt;, &lt;code&gt;git push&lt;/code&gt; und &lt;code&gt;gh&lt;/code&gt;, bis Sie sich angemeldet haben.&lt;/p&gt;
 &lt;p&gt;Die Prüfung läuft auch später: Vor einem &lt;code&gt;git commit&lt;/code&gt;, &lt;code&gt;git push&lt;/code&gt; oder &lt;code&gt;gh&lt;/code&gt;-Befehl in einer
 ungeschützten Sitzung prüft der Guard das Repository, auf das der Befehl zielt. Eine Sitzung, die vor
 der Installation der App oder in einem übergeordneten Verzeichnis gestartet wurde, ist ab diesem
@@ -132,7 +143,9 @@ Befehl geschützt.&lt;/p&gt;
 &lt;div class="hx:ltr:pl-3 hx:ltr:pr-2 hx:rtl:pr-3 hx:rtl:pl-2"&gt;&lt;svg height=1.2em class="hx:inline-block hx:align-middle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/&gt;&lt;/svg&gt;&lt;/div&gt;
 &lt;div class="hx:w-full hx:min-w-0 hx:leading-7"&gt;
 &lt;div class="hx:mt-6 hx:leading-7 hx:first:mt-0"&gt;Das Plugin ist eine Leitplanke, keine Sandbox. Der Hook vergleicht Befehlstext, daher kommen
-&lt;code&gt;env git push&lt;/code&gt; oder ein Skript, das pusht, mit Ihren Zugangsdaten durch. Für Isolation nutzen Sie
+&lt;code&gt;g=git; $g push&lt;/code&gt; oder ein Skript, das pusht, mit Ihren Zugangsdaten durch. Er prüft auch nicht, auf
+welchen Container ein exec zielt: Einer, dessen &lt;code&gt;gh&lt;/code&gt; Ihren Login hat, kommt durch.
+GitHub-MCP-Tools werden nicht geprüft. Für Isolation nutzen Sie
 den &lt;a href="../container/"&gt;Container&lt;/a&gt; oder den &lt;a href="../devcontainer/"&gt;Dev Container&lt;/a&gt;. Siehe das
 &lt;a href="../../concepts/security-model/"&gt;Sicherheitsmodell&lt;/a&gt;.&lt;/div&gt;
 &lt;/div&gt;
@@ -676,11 +689,13 @@ Teams nennt: Bots können keine Code Owner sein. Siehe
 &lt;a href="../../guides/review-rules/"&gt;Review-Regeln setzen&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;Das Plugin ist eine Leitplanke, keine Sandbox&lt;span class="hx:absolute hx:-mt-20" id="the-plugin-is-a-guardrail-not-a-sandbox"&gt;&lt;/span&gt;
 &lt;a href="#the-plugin-is-a-guardrail-not-a-sandbox" class="subheading-anchor" aria-label="Permalink für diesen Abschnitt"&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Das Claude-Code-Plugin weist Claude an, Agent-Tokens zu nutzen, und blockiert &lt;code&gt;git commit&lt;/code&gt;,
-&lt;code&gt;git push&lt;/code&gt; und ein bloßes &lt;code&gt;gh&lt;/code&gt;, indem es Befehlstext vergleicht. Ein Befehl wie &lt;code&gt;env git push&lt;/code&gt;,
-&lt;code&gt;/usr/bin/git push&lt;/code&gt; oder ein Skript, das pusht, kommt durch und nutzt die Zugangsdaten des
-Entwicklers. Die Sperre folgt außerdem der Sitzung, nicht dem Verzeichnis: Nach einem &lt;code&gt;cd&lt;/code&gt; in ein
-anderes Repository gilt sie weiter, und eine Sitzung, die außerhalb eines agent-token-Repositorys
-gestartet wurde, bleibt ungeschützt.&lt;/p&gt;
+&lt;code&gt;git push&lt;/code&gt; und &lt;code&gt;gh&lt;/code&gt;, indem es Befehlstext vergleicht. Fehlt der Agent-Login oder ist er veraltet,
+blockiert es Commits, Pushes und neue Pull Requests, damit Claude um einen Login bittet, statt den
+SSH-Schlüssel des Entwicklers zu nutzen; hindert der abgelaufene Login es daran, die Topics eines
+Repositorys zu lesen, blockiert es diese ebenfalls. Ein Befehl wie &lt;code&gt;g=git; $g push&lt;/code&gt; oder ein Skript,
+das pusht, kommt durch und nutzt die Zugangsdaten des Entwicklers, und GitHub-MCP-Tools werden nicht
+geprüft. Die Sperre folgt außerdem der Sitzung, nicht dem Verzeichnis: Nach einem &lt;code&gt;cd&lt;/code&gt; in ein
+anderes Repository gilt sie weiter.&lt;/p&gt;
 &lt;p&gt;Repository-Admins können Topics von Hand ändern. Ein falsches Topic kostet einen fehlgeschlagenen
 Aufruf und sonst nichts, weil der Broker Tokens dort ablehnt, wo die App nicht installiert ist.&lt;/p&gt;
 &lt;h2 data-hextra-search-id="host-versus-container"&gt;Rechner versus Container&lt;span class="hx:absolute hx:-mt-20" id="host-versus-container"&gt;&lt;/span&gt;
