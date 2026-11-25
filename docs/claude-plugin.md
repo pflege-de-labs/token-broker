@@ -43,6 +43,12 @@ tells Claude to ask for `! agent-token --login`, instead of letting it look for 
 leaves a marker in `$TMPDIR/claude-agent-token/<session id>` for it. Cases:
 `plugins/agent-token/test.sh`, run in CI.
 
+`gh` inside one standalone `podman exec`, `docker exec` or `devcontainer exec` is allowed: in the
+agent devcontainer it is the wrapper, with the container's own login. Quote the container's
+command in single quotes, e.g. `podman exec -u vscode <container> bash -lc 'gh pr create --fill'`.
+Commands chained around the exec, `GH_TOKEN`, `GITHUB_TOKEN`, `--env-file` and `gh` by a path are
+still blocked (ADR 18).
+
 If `gh` is the `agent-gh` wrapper and `gh repo view` fails for want of a login, the topic is
 unknown: the session start tells Claude to ask for `! agent-token --login` and leaves
 `<session id>.unknown`, and the guard blocks `git commit`, `git push` and `gh` until the check
@@ -59,8 +65,9 @@ outside the repo, get guarded too. Each such command in a repo without the topic
 
 - It is a guardrail, not a sandbox: the guard matches command text, so `g=git; $g push`,
   `"$(command -v git)" push` or a script that pushes get through with the developer's credentials.
-  The GitHub MCP tools are not Bash commands and are not guarded. For isolation run the agent
-  with [`agent-run`](local.md) or the [devcontainer](containers.md).
+  The guard does not check which container an exec targets: one whose `gh` has the developer's
+  credentials gets through. The GitHub MCP tools are not Bash commands and are not guarded. For
+  isolation run the agent with [`agent-run`](local.md) or the [devcontainer](containers.md).
 - The marker belongs to the session, not the directory: after a `cd` into another repo the guard
   still applies. The late check reads only the first `cd` or `-C` in a command, so
   `cd a && cd b && git push` is checked in `a`.
